@@ -1,0 +1,8 @@
+# Directories to ignore
+results/
+data/
+qsub_out/
+_Inline
+**/_Inline
+.snakemake
+**/.snakemake
