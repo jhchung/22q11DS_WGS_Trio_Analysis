@@ -516,7 +516,6 @@ def summarize_exonic_functions(input, output):
         output: Path to output file.
     """
     exonic_function_column = "ExonicFunc.refGene"
-
     all_exonic_function = []
     
     with open(input) as in_file:
@@ -524,7 +523,7 @@ def summarize_exonic_functions(input, output):
             if line.startswith("Chr\tStart"):
                 header = line.split("\t")
                 exonic_function_index = header.index(exonic_function_column)
-            else:
+            elif not line.startswith("#"):
                 var_annotation = line.split("\t")
                 var_exonic_function = var_annotation[exonic_function_index]
                 all_exonic_function.append(var_exonic_function)
@@ -534,8 +533,8 @@ def summarize_exonic_functions(input, output):
     frameshift_block_sub = all_exonic_function.count(
         "frameshift block substitution"
     )
-    stopgain = all_exonic_function.count("stopgain")
-    stoploss = all_exonic_function.count("stoploss")
+    stopgain = all_exonic_function.count("stopgain SNV")
+    stoploss = all_exonic_function.count("stoploss SNV")
     nonframeshift_insertion = all_exonic_function.count(
         "nonframeshift insertion"
     )
@@ -587,7 +586,7 @@ def summarize_variant_function(input, output):
             if line.startswith("Chr\tStart"):
                 header = line.split("\t")
                 variant_function_column = header.index(variant_function_column)
-            else:
+            elif not line.startswith("#"):
                 var_annotation = line.split("\t")
                 var_function = var_annotation[variant_function_column]
                 all_variant_function.append(var_function)
@@ -615,6 +614,51 @@ def summarize_variant_function(input, output):
         out_file.write("Upstream\t{0}\n".format(upstream))
         out_file.write("Downstream\t{0}\n".format(downstream))
         out_file.write("Intergenic\t{0}\n".format(intergenic))
+
+def count_population_database(input, output, dbsnp_name = "snp138",
+                              thousand_genomes_name = "1000g2012apr_all",
+                              esp_name = "esp6500si_all"):
+    """Get a count of population database annotations.
+    
+    Args:
+        input: Path to multianno ANNOVAR file.
+        output: Path to output file
+    """
+    
+    dbsnp = []
+    thousand_genomes = []
+    esp = []
+    in_db = 0
+    with open(input) as in_file:
+        for line in in_file:
+            if line.startswith("Chr\tStart"):
+                header = line.split("\t")
+                dbsnp_index = header.index(dbsnp_name)
+                thousand_index = header.index(thousand_genomes_name)
+                esp_index = header.index(esp_name)
+            elif not line.startswith("#"):
+                var_annotation = line.split("\t")
+                dbsnp.append(var_annotation[dbsnp_index])
+                thousand_genomes.append(var_annotation[thousand_index])
+                esp.append(var_annotation[esp_index])
+                if not all([var_annotation[dbsnp_index] == "",
+                            var_annotation[thousand_index] == "",
+                            var_annotation[esp_index] == ""]):
+                    in_db = in_db + 1
+    total = len(dbsnp)
+    in_dbsnp = total - dbsnp.count("")
+    in_thousand_genomes = total - thousand_genomes.count("")
+    in_esp = total - esp.count("")
+    novel = total - in_db
+    
+    with open(output, "w") as out_file:
+        out_file.write("Database\tCount\n")
+        out_file.write("All variants\t{0}\n".format(total))
+        out_file.write("In any DB\t{0}\n".format(in_db))
+        out_file.write("In dbSNP138\t{0}\n".format(in_dbsnp))
+        out_file.write("In 1KG\t{0}\n".format(in_thousand_genomes))
+        out_file.write("In ESP6500\t{0}\n".format(in_esp))
+        out_file.write("Novel\t{0}\n".format(novel))
 
 ################################################################################
 # Begin Rules
@@ -752,39 +796,39 @@ rule summarize_denovo_variant_counts:
     output: 
         "results/annovar_output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.txt"
     shell: """
-        grep -v -P "Chr\tStart" {input.multianno} \
-            | grep -v -E "^#" \
-            | awk 'END {{print "total\t", NR}}' \
-            > {output}
-        awk 'END {{print "In dbSNP138\t", NR}}' {input.dbsnp} \
+        grep -v -P "Chr\tStart" {input.multianno} | \
+            grep -v -E "^#" | \
+            awk 'END {{print "total\t",NR}}' > \
+            {output}
+        awk 'END {{print "In dbSNP138\t",NR}}' {input.dbsnp} \
             >> {output}
-        awk 'END {{print "In 1kg (2012/10)\t", NR}}' {input.onekg} \
+        awk 'END {{print "In 1kg (2012/10)\t",NR}}' {input.onekg} \
             >> {output}
-        awk 'END {{print "Exonic\t", NR}}' {input.exonic} \
+        awk 'END {{print "Exonic\t",NR}}' {input.exonic} \
             >> {output}
         grep "nonsynonymous" {input.exonic} \
-            | awk 'END {{print "Nonsynonymous\t", NR}}' \
+            | awk 'END {{print "Nonsynonymous\t",NR}}' \
             >> {output}
         grep "stop" {input.multianno} \
-            | awk 'END {{print "Stop gain/loss\t", NR}}' \
+            | awk 'END {{print "Stop gain/loss\t",NR}}' \
             >> {output}
         grep "splicing" {input.multianno} \
-            | awk 'END {{print "Splice altering\t", NR}}' \
+            | awk 'END {{print "Splice altering\t",NR}}' \
             >> {output}
         grep -w "frameshift" {input.multianno} \
-            | awk 'END {{print "Frameshift\t", NR}}' \
+            | awk 'END {{print "Frameshift\t",NR}}' \
             >> {output}
         grep -w "intronic" {input.variant_function} \
-            | awk 'END {{print "Intronic\t", NR}}' \
+            | awk 'END {{print "Intronic\t",NR}}' \
             >> {output}
         grep -w "upstream" {input.variant_function} \
-            | awk 'END {{print "Upstream\t", NR}}' \
+            | awk 'END {{print "Upstream\t",NR}}' \
             >> {output}
         grep -w "downstream" {input.variant_function} \
-            | awk 'END {{print "Downstream\t", NR}}' \
+            | awk 'END {{print "Downstream\t",NR}}' \
             >> {output}
         grep -w "intergenic" {input.variant_function} \
-            | awk 'END {{print "Intergenic\t", NR}}' \
+            | awk 'END {{print "Intergenic\t",NR}}' \
             >> {output}
     """
 
@@ -992,9 +1036,27 @@ rule rare_inherited_extract_inherited:
 ################################################################################
 rule check_22q11_genes:
     input:
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.filtering_summary.txt", VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar/output/counts/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.var_function.txt", VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar/output/counts/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.exonic_function.txt", VAR_TYPE = var_type, SAMPLEID = probandid)
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}."
+                 "remaining22q11.filtering_summary.txt")
+            ), 
+            VAR_TYPE = var_type, SAMPLEID = probandid),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts/remaining_22q11",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}."
+                 "remaining22q11.exonic.nonsyn.deleterious.var_function.txt")
+            ), 
+            VAR_TYPE = var_type, SAMPLEID = probandid),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts/remaining_22q11",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11."
+                 "exonic.nonsyn.deleterious.exonic_function.txt")
+            ),
+            VAR_TYPE = var_type, SAMPLEID = probandid)
 
 rule chr22q11_summarize_variant_function:
     input:
@@ -1052,32 +1114,32 @@ rule chr22q11_summarize_filtering_steps:
     echo -e "Filtering step\tVariants" > {output}
     grep -v -P "Chr\tStart" {input.multianno_file} \
         | grep -v -E "^#" \
-        | awk 'END {{print "22q11.2 deleted region\t", NR}}' \
+        | awk 'END {{print "22q11.2 deleted region\t",NR}}' \
         >> {output}
     # total variants
     grep -v -P "Chr\tStart" {input.chr22_file} \
         | grep -v -E "^#" \
-        | awk 'END {{print "22q11.2 deleted region\t", NR}}' \
+        | awk 'END {{print "22q11.2 deleted region\t",NR}}' \
         >> {output}
     # non-coding variants
     grep -v -P "Chr\tStart" {input.noncoding_file} \
         | grep -v -E "^#" \
-        | awk 'END {{print "Non-coding\t", NR}}' \
+        | awk 'END {{print "Non-coding\t",NR}}' \
         >> {output}
     # Exonic variants
     grep -v -P "Chr\tStart" {input.exonic_file} \
         | grep -v -E "^#" \
-        | awk 'END {{print "Exonic\t", NR}}' \
+        | awk 'END {{print "Exonic\t",NR}}' \
         >> {output}
     # Non-synonymous variants
     grep -v -P "Chr\tStart" {input.nonsynonymous_file} \
         | grep -v -E "^#" \
-        | awk 'END {{print "Non-synonymous\t", NR}}' \
+        | awk 'END {{print "Non-synonymous\t",NR}}' \
         >> {output}
     # Deleterious variants
     grep -v -P "Chr\tStart" {input.deleterious_file} \
         | grep -v -E "^#" \
-        | awk 'END {{print "Deleterious\t", NR}}' \
+        | awk 'END {{print "Deleterious\t",NR}}' \
         >> {output}
     """
 
@@ -1191,19 +1253,19 @@ rule summarize_filtering_steps_indiv:
         "results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.filtering_summary.txt"
     shell: """
     echo -e "Filtering step\tVariants" > {output}
-    grep -v -P "Chr\tStart" {input.multianno_file} | grep -v -E "^#" | awk 'END {{print "All variants\t", NR}}' >> {output}
+    grep -v -P "Chr\tStart" {input.multianno_file} | grep -v -E "^#" | awk 'END {{print "All variants\t",NR}}' >> {output}
     # total variants
-    grep -v -P "Chr\tStart" {input.freq_file} | grep -v -E "^#" | awk 'END {{print "Allele frequency: {params.frequency}\t", NR}}' >> {output}
+    grep -v -P "Chr\tStart" {input.freq_file} | grep -v -E "^#" | awk 'END {{print "Allele frequency: {params.frequency}\t",NR}}' >> {output}
     # Remove superdup variants
-    grep -v -P "Chr\tStart" {input.superdup_file} | grep -v -E "^#" | awk 'END {{print "Excluding genomic superdups\t", NR}}' >> {output}
+    grep -v -P "Chr\tStart" {input.superdup_file} | grep -v -E "^#" | awk 'END {{print "Excluding genomic superdups\t",NR}}' >> {output}
     # non-coding variants
-    grep -v -P "Chr\tStart" {input.noncoding_file} | grep -v -E "^#" | awk 'END {{print "Non-coding variants\t", NR}}' >> {output}
+    grep -v -P "Chr\tStart" {input.noncoding_file} | grep -v -E "^#" | awk 'END {{print "Non-coding variants\t",NR}}' >> {output}
     # Exonic variants
-    grep -v -P "Chr\tStart" {input.exonic_file} | grep -v -E "^#" | awk 'END {{print "Exonic variants\t", NR}}' >> {output}
+    grep -v -P "Chr\tStart" {input.exonic_file} | grep -v -E "^#" | awk 'END {{print "Exonic variants\t",NR}}' >> {output}
     # Non-synonymous variants
-    grep -v -P "Chr\tStart" {input.nonsynonymous_file} | grep -v -E "^#" | awk 'END {{print "Non-synonymous variants\t", NR}}' >> {output}
+    grep -v -P "Chr\tStart" {input.nonsynonymous_file} | grep -v -E "^#" | awk 'END {{print "Non-synonymous variants\t",NR}}' >> {output}
     # Deleterious variants
-    grep -v -P "Chr\tStart" {input.deleterious_file} | grep -v -E "^#" | awk 'END {{print "Deleterious variants\t", NR}}' >> {output}
+    grep -v -P "Chr\tStart" {input.deleterious_file} | grep -v -E "^#" | awk 'END {{print "Deleterious variants\t",NR}}' >> {output}
     """
 
 rule extract_deleterious_indiv:
@@ -1302,10 +1364,7 @@ rule combine_population_counts:
 
 rule indiv_population_counts:
     input: 
-        multianno = "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt",
-        dbsnp     = "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_snp138_dropped",
-        onekg     = "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_ALL.sites.2012_04_dropped",
-        esp       = "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_esp6500si_all_dropped"
+        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
     output: 
         "results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.pop_counts.txt"
     message:"""
@@ -1317,17 +1376,14 @@ rule indiv_population_counts:
         * Found in dbSNP138
         * Found in 1kg 
         * Found in ESP6500
+        * Found in any DB
+        * Novel variants
     
     Input: {input}
     Output: {output}
     """
-    shell: """
-        # total variants
-        grep -v -P "Chr\tStart" {input.multianno} | grep -v -E "^#" | awk 'END {{print "total\t", NR}}' > {output}
-        awk 'END {{print "In dbSNP138\t", NR}}' {input.dbsnp} >> {output}
-        awk 'END {{print "In 1kg (2012/10)\t", NR}}' {input.onekg} >> {output}
-        awk 'END {{print "In ESP6500\t", NR}}' {input.esp} >> {output}
-    """
+    run:
+        count_population_database(input[0], output[0])
 
 rule table_annotation_indiv:
     input: "results/annovar/input/qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.avinput"
@@ -1492,18 +1548,8 @@ rule test_all_sample_annotation:
 
 rule all_sample_population_counts:
     input: 
-        multianno = os.path.join(
-            "results/annovar/output/multiannotation/all_samples",
-            "wgs_phased_{VAR_TYPE}.hg19_multianno.txt"),
-        dbsnp = os.path.join(
-            "results/annovar/output/multiannotation/all_samples",
-            "wgs_phased_{VAR_TYPE}.hg19_snp138_dropped"),
-        onekg = os.path.join(
-            "results/annovar/output/multiannotation/all_samples",
-            "wgs_phased_{VAR_TYPE}.hg19_ALL.sites.2012_04_dropped"),
-        esp = os.path.join(
-            "results/annovar/output/multiannotation/all_samples",
-            "wgs_phased_{VAR_TYPE}.hg19_esp6500si_all_dropped")
+        os.path.join("results/annovar/output/multiannotation/all_samples",
+                     "wgs_phased_{VAR_TYPE}.hg19_multianno.txt")
     output: 
         os.path.join("results/annovar/output/counts",
                      "wgs_phased_{VAR_TYPE}.all_sample.pop_counts.txt")
@@ -1516,24 +1562,14 @@ Get the counts of variants that were previously reported:
     * Found in dbSNP138
     * Found in 1kg 
     * Found in ESP6500
+    * In any DB
+    * Novel variants
     
     Input: {input}
     Output: {output}
     """
-    shell: """
-    echo -e "Category\tCount" \
-        > {output}
-    grep -v -P "Chr\tStart" {input.multianno} \
-        | grep -v -E "^#" \
-        | awk 'END {{print "Total variants\t", NR}}' \
-        >> {output}
-    awk 'END {{print "In dbSNP138\t", NR}}' {input.dbsnp} \
-        >> {output}
-    awk 'END {{print "In 1kg (2012/10)\t", NR}}' {input.onekg} \
-        >> {output}
-    awk 'END {{print "In ESP6500\t", NR}}' {input.esp} \
-        >> {output}
-    """
+    run:
+        count_population_database(input[0], output[0])
 
 rule table_annotation_all_samples:
     input: 
