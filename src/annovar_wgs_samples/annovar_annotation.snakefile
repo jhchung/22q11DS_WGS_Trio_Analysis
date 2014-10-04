@@ -20,8 +20,6 @@ probandid    = ["BM1452.001", "BM1453.001"]
 var_type     = ["snp", "indel"]
 var_freq     = ["maf_0.01", "maf_0.05", "novel", "all"]
 
-
-
 ################################################################################
 # Functions
 ################################################################################
@@ -184,7 +182,10 @@ def extract_deleterious_variants(input, output, deleterious_score_cutoff):
     in_file = open(input, "r")
     out_file = open(output, "w")
     
-    re_frameshift = re.compile("\sframeshift insertion\s|\sframeshift deletion\s|\sframeshift block substitution\s")
+    re_frameshift = re.compile(
+        "|".join(["\sframeshift insertion\s", "\sframeshift deletion\s",
+                  "\sframeshift block substitution\s"])
+    )
     re_stopalter = re.compile("\sstopgain\s|\sstoploss\s")
     re_nonsyn = re.compile("nonsynonymous")
     re_splice = re.compile("splicing")
@@ -195,18 +196,24 @@ def extract_deleterious_variants(input, output, deleterious_score_cutoff):
         
         if line.startswith("Chr\tStart"):
             sift_pred_index = split_line.index("LJB23_SIFT_pred")
-            polyphen2_hdiv_pred_index = split_line.index("LJB23_Polyphen2_HDIV_pred")
+            polyphen2_hdiv_pred_index = split_line.index(
+                "LJB23_Polyphen2_HDIV_pred"
+            )
             lrt_pred_index = split_line.index("LJB23_LRT_pred")
-            mutationtaster_pred_index = split_line.index("LJB23_MutationTaster_pred")
+            mutationtaster_pred_index = split_line.index(
+                "LJB23_MutationTaster_pred"
+            )
             out_file.write(line)
         elif line.startswith("#"):
             out_file.write(line)
         elif re_nonsyn.search(line):
             # Test for deleteriousness of nonsynonymous variants
             sift = split_line[sift_pred_index] == "D"
-            polyphen2 = (split_line[polyphen2_hdiv_pred_index] == "D") or (split_line[polyphen2_hdiv_pred_index] == "P")
+            polyphen2 = (split_line[polyphen2_hdiv_pred_index] == "D" or 
+                         split_line[polyphen2_hdiv_pred_index] == "P")
             lrt = split_line[lrt_pred_index] == "D"
-            mutationtaster = (split_line[mutationtaster_pred_index] == "A") or (split_line[mutationtaster_pred_index] == "D")
+            mutationtaster = (split_line[mutationtaster_pred_index] == "A" or
+                              split_line[mutationtaster_pred_index] == "D")
             
             deleterious_score = sum([sift, polyphen2, lrt, mutationtaster])
             if (deleterious_score >= deleterious_score_cutoff):
@@ -375,7 +382,8 @@ def extract_inherited_variant(input, output,proband_id, father_id, mother_id,
             father_genotype = split_line[father_index]
             mother_genotype = split_line[mother_index]
             if "." not in proband_genotype:
-                if check_inherited_variant(proband_genotype, father_genotype, mother_genotype, inherited_from):
+                if check_inherited_variant(proband_genotype, father_genotype, 
+                                           mother_genotype, inherited_from):
                     out_file.write(line)
     out_file.close()
     in_file.close()
@@ -445,10 +453,12 @@ def genotype_quality_control(genotype_info):
     if "." in genotype_split[0]:
         return None
     else:
-        pass_alt_allele_ratio = check_alt_allele_ratio(genotype_split[0], genotype_split[1])
+        pass_alt_allele_ratio = check_alt_allele_ratio(genotype_split[0], 
+                                                       genotype_split[1])
         pass_depth = check_read_depth(genotype_split[2])
         pass_genotype_quality = check_genotype_quality(genotype_split[3])
-        pass_qc = all([pass_alt_allele_ratio, pass_depth, pass_genotype_quality])
+        pass_qc = all([pass_alt_allele_ratio, pass_depth, 
+                       pass_genotype_quality])
         return pass_qc
 
 def extract_denovo_variants(input, output, proband_id, father_id, mother_id):
@@ -476,7 +486,9 @@ def extract_denovo_variants(input, output, proband_id, father_id, mother_id):
                 father_alt = check_alt_in_genotype(father_genotype)
                 mother_alt = check_alt_in_genotype(mother_genotype)
                 
-                if not any([proband_alt == None, father_alt == None, mother_alt == None]):
+                if not any([proband_alt == None, 
+                            father_alt == None, 
+                            mother_alt == None]):
                     # Check genotype quality
                     proband_qc = genotype_quality_control(proband_genotype)
                     father_qc = genotype_quality_control(father_genotype)
@@ -519,26 +531,44 @@ def summarize_exonic_functions(input, output):
     
     frameshift_insertion = all_exonic_function.count("frameshift insertion")
     frameshift_deletion = all_exonic_function.count("frameshift deletion")
-    frameshift_block_sub = all_exonic_function.count("frameshift block substitution")
+    frameshift_block_sub = all_exonic_function.count(
+        "frameshift block substitution"
+    )
     stopgain = all_exonic_function.count("stopgain")
     stoploss = all_exonic_function.count("stoploss")
-    nonframeshift_insertion = all_exonic_function.count("nonframeshift insertion")
+    nonframeshift_insertion = all_exonic_function.count(
+        "nonframeshift insertion"
+    )
     nonframeshift_deletion = all_exonic_function.count("nonframeshift deletion")
-    nonframeshift_block_sub = all_exonic_function.count("nonframeshift block substitution")
+    nonframeshift_block_sub = all_exonic_function.count(
+        "nonframeshift block substitution"
+    )
     nonsynonymous_snv = all_exonic_function.count("nonsynonymous SNV")
     synonymous_snv = all_exonic_function.count("synonymous SNV")
     unknown = all_exonic_function.count("unknown")
     
     with open(output, "w") as out_file:
         out_file.write("Exonic function\tCount\n")
-        out_file.write("Frameshift insertion\t{0}\n".format(frameshift_insertion))
+        out_file.write(
+            "Frameshift insertion\t{0}\n".format(frameshift_insertion)
+        )
         out_file.write("Frameshift deletion\t{0}\n".format(frameshift_deletion))
-        out_file.write("Frameshift block substitution\t{0}\n".format(frameshift_block_sub))
+        out_file.write(
+            "Frameshift block substitution\t{0}\n".format(frameshift_block_sub)
+        )
         out_file.write("Stopgain\t{0}\n".format(stopgain))
         out_file.write("Stoploss\t{0}\n".format(stoploss))
-        out_file.write("Nonframeshift insertion\t{0}\n".format(nonframeshift_insertion))
-        out_file.write("Nonframeshift deletion\t{0}\n".format(nonframeshift_deletion))
-        out_file.write("Nonframeshift block substitution\t{0}\n".format(nonframeshift_block_sub))
+        out_file.write(
+            "Nonframeshift insertion\t{0}\n".format(nonframeshift_insertion)
+        )
+        out_file.write(
+            "Nonframeshift deletion\t{0}\n".format(nonframeshift_deletion)
+        )
+        out_file.write(
+            "Nonframeshift block substitution\t{0}\n".format(
+                nonframeshift_block_sub
+            )
+        )
         out_file.write("Nonsynonymous SNV\t{0}\n".format(nonsynonymous_snv))
         out_file.write("Synonymous SNV\t{0}\n".format(synonymous_snv))
         out_file.write("Unknown\t{0}\n".format(unknown))
@@ -591,8 +621,15 @@ def summarize_variant_function(input, output):
 ################################################################################
 rule all:
     input:
-        "results/variant_counts/wgs_phased_all_variants.hg19_multianno.genic.lod100.tbx1_counts.txt",
-        "results/variant_counts/wgs_phased_all_variants.hg19_multianno.lod100.tbx1_counts.txt",
+        os.path.join(
+            "results/variant_counts",
+            ("wgs_phased_all_variants.hg19_multianno."
+             "genic.lod100.tbx1_counts.txt")
+         ),
+        os.path.join(
+            "results/variant_counts",
+            "wgs_phased_all_variants.hg19_multianno.lod100.tbx1_counts.txt"
+        ),
         "results/novel_variants/novel_deleterious.snv.txt",
         "results/novel_variants/novel_deleterious.indel.txt",
         "results/rare_variants/rare_genic_deleterious.snv.txt",
@@ -622,10 +659,16 @@ rule split_indel_snv_rare:
 
 rule count_variants_tbx1_pathway_genic_lod100:
     input:
-        "results/annovar_output/genic_lod100/wgs_phased_all_variants.hg19_multianno.genic.lod100.txt",
+        os.path.join(
+            "results/annovar_output/genic_lod100",
+            "wgs_phased_all_variants.hg19_multianno.genic.lod100.txt"
+        ),
         "data/tbx1_pathway_genes_2014_03_27.txt"
     output:
-        "results/variant_counts/wgs_phased_all_variants.hg19_multianno.genic.lod100.tbx1_counts.txt"
+        os.path.join(
+            "results/variant_counts",
+            "wgs_phased_all_variants.hg19_multianno.genic.lod100.tbx1_counts.txt"
+        )
     shell: """
     perl src/perl/count_var_per_gene.pl \
     {input[1]} \
@@ -635,10 +678,16 @@ rule count_variants_tbx1_pathway_genic_lod100:
 
 rule count_variants_tbx1_pathway_all_lod100:
     input:
-        "results/annovar_output/all_lod100/wgs_phased_all_variants.hg19_multianno.lod100.txt",
+        os.path.join(
+            "results/annovar_output/all_lod100",
+            "wgs_phased_all_variants.hg19_multianno.lod100.txt"
+        ),
         "data/tbx1_pathway_genes_2014_03_27.txt"
     output:
-        "results/variant_counts/wgs_phased_all_variants.hg19_multianno.lod100.tbx1_counts.txt"
+        os.path.join(
+            "results/variant_counts",
+            "wgs_phased_all_variants.hg19_multianno.lod100.tbx1_counts.txt"
+        )
     shell: """
     perl src/perl/count_var_per_gene.pl \
     {input[1]} \
