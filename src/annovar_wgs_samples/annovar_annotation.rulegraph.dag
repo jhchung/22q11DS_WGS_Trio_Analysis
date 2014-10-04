@@ -1,0 +1,71 @@
+digraph snakemake_dag {
+    graph[bgcolor=white];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "indiv_summarize_exonic_function", color = "0.34 0.6 0.85", style="rounded"];
+	1[label = "extract_deleterious_indiv", color = "0.35 0.6 0.85", style="rounded"];
+	2[label = "chr22q11_extract_deleterious", color = "0.12 0.6 0.85", style="rounded"];
+	3[label = "filter_vcf_file", color = "0.58 0.6 0.85", style="rounded"];
+	4[label = "remove_superdup_indiv", color = "0.02 0.6 0.85", style="rounded"];
+	5[label = "checkpoint1", color = "0.07 0.6 0.85", style="rounded"];
+	6[label = "extract_nonsynonymous_indiv", color = "0.42 0.6 0.85", style="rounded"];
+	7[label = "filter_on_variant_frequency", color = "0.11 0.6 0.85", style="rounded"];
+	8[label = "chr22q11_summarize_exonic_function", color = "0.13 0.6 0.85", style="rounded"];
+	9[label = "chr22q11_parse_coding_noncoding", color = "0.40 0.6 0.85", style="rounded"];
+	10[label = "combine_population_counts", color = "0.16 0.6 0.85", style="rounded"];
+	11[label = "chr22q11_summarize_filtering_steps", color = "0.47 0.6 0.85", style="rounded"];
+	12[label = "indiv_population_counts", color = "0.48 0.6 0.85", style="rounded"];
+	13[label = "parse_coding_noncoding_indiv", color = "0.51 0.6 0.85", style="rounded"];
+	14[label = "chr22q11_extract_nonsynonymous", color = "0.18 0.6 0.85", style="rounded"];
+	15[label = "convert_allsample_to_avinput", color = "0.52 0.6 0.85", style="rounded"];
+	16[label = "chr22q11_summarize_variant_function", color = "0.19 0.6 0.85", style="rounded"];
+	17[label = "table_annotation_indiv", color = "0.21 0.6 0.85", style="rounded"];
+	18[label = "all_sample_population_counts", color = "0.46 0.6 0.85", style="rounded"];
+	19[label = "extract_22q11_genes", color = "0.25 0.6 0.85", style="rounded"];
+	20[label = "indiv_summarize_variant_function", color = "0.59 0.6 0.85", style="rounded"];
+	21[label = "split_vcf_file", color = "0.29 0.6 0.85", style="rounded"];
+	22[label = "qc_genotype_indiv", color = "0.62 0.6 0.85", style="rounded"];
+	23[label = "table_annotation_all_samples", color = "0.50 0.6 0.85", style="rounded"];
+	24[label = "summarize_filtering_steps_indiv", color = "0.55 0.6 0.85", style="rounded"];
+	25[label = "convert_to_annovar_indiv", color = "0.44 0.6 0.85", style="rounded"];
+	1 -> 0
+	6 -> 1
+	14 -> 2
+	7 -> 4
+	0 -> 5
+	11 -> 5
+	16 -> 5
+	20 -> 5
+	8 -> 5
+	24 -> 5
+	10 -> 5
+	13 -> 6
+	17 -> 7
+	2 -> 8
+	19 -> 9
+	12 -> 10
+	18 -> 10
+	2 -> 11
+	17 -> 11
+	19 -> 11
+	14 -> 11
+	9 -> 11
+	17 -> 12
+	4 -> 13
+	9 -> 14
+	3 -> 15
+	2 -> 16
+	25 -> 17
+	23 -> 18
+	17 -> 19
+	1 -> 20
+	21 -> 22
+	15 -> 23
+	1 -> 24
+	13 -> 24
+	17 -> 24
+	4 -> 24
+	6 -> 24
+	7 -> 24
+	22 -> 25
+}            
