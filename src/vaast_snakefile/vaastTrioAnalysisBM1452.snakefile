@@ -3,14 +3,14 @@ import os
 
 workdir: "/home/jchung/projects/wgs/"
 vcftools = "/apps1/vcftools/vcftools_0.1.11/cpp/vcftools"
-vaast_sort_gff = "/home/jchung/programs/VAAST_Code_2.1.0/bin/vaast_tools/vaast_sort_gff"
-vaast_converter = "/home/jchung/programs/VAAST_Code_2.1.0/bin/vaast_tools/vaast_converter"
-quality_check = "/home/jchung/programs/VAAST_Code_2.1.0/bin/vaast_tools/quality-check.pl"
+vaast_sort_gff = "/home/jchung/programs/VAAST_Code_2.1.4/bin/vaast_tools/vaast_sort_gff"
+vaast_converter = "/home/jchung/programs/VAAST_Code_2.1.4/bin/vaast_tools/vaast_converter"
+quality_check = "/home/jchung/programs/VAAST_Code_2.1.4/bin/vaast_tools/quality-check.pl"
 
-refseqFeatures = "/home/jchung/programs/VAAST_Code_2.1.0/data/hg19/Features/refGene_hg19.gff3"
-refseqFeaturesSort = "/home/jchung/programs/VAAST_Code_2.1.0/data/hg19/Features/refGene_hg19.sorted.gff3"
-hg19Fasta = "/home/jchung/programs/VAAST_Code_2.1.0/data/hg19/Fasta/vaast_hsap_chrs_hg19.fa"
-background1KG = "/home/jchung/programs/VAAST_Code_2.1.0/data/hg19/Background_CDR/1KG_refGene_Dec2011_CGDiv_NHLBI_NoCall.cdr"
+refseqFeatures = "/cork/jchung/vaast/data/RefSeq_GRCh37.p10_VAAST.gff3"
+refseqFeaturesSort = "/cork/jchung/vaast/data/RefSeq_GRCh37.p10_VAAST.sorted.hg19.gff3"
+hg19Fasta = "/cork/jchung/vaast/data/vaast_hsap_chrs_hg19.fa"
+background1KG = "/cork/jchung/vaast/data/1KGv3_CG_Div_NHLBI_dbSNP_RefSeq.cdr"
 
 BM1452Target = ["BM1452.001"]
 BM1453Target = ["BM1453.001"]
@@ -23,13 +23,13 @@ sampleIDs = BM1452 + BM1453
 # subworkflow wesBackgroundWorkflow:
     # workdir: "/home/jchung/projects/wgs/"
     # snakefile: "/home/jchung/projects/wgs/src/vaastPrepareWESControlForBackground.snakefile"
-    
+
 rule all:
     input: "results/vaastOutput/VAAST/BM1452AnalysisRecCompWES.vaast",
            "results/vaastOutput/VAAST/BM1452AnalysisRecCompWESTopFeatures.vaast",
            "results/vaastOutput/VAAST/BM1452AnalysisRecComp1KG.vaast",
            "results/vaastOutput/VAAST/BM1452AnalysisRecComp1KGTopFeatures.vaast"
-           
+
 rule rerunVAASTAnalysisOnTopFeaturesWES:
     input: target = "results/vaastOutput/VST/BM1452Target.cdr",
            trio = "results/vaastOutput/VST/BM1452Background.union.cdr",
@@ -61,7 +61,7 @@ rule rerunVAASTAnalysisOnTopFeaturesWES:
         {input.features} \
         {input.background} \
         {input.target}""")
-    
+
 rule extractSignificantFeaturesWES:
     input: vaastResult = "results/vaastOutput/VAAST/BM1452AnalysisRecCompWES.vaast"
     output: sigFeatureFile = "results/vaastOutput/VAAST/BM1452AnalysisRecCompWESSigFeatures.txt"
@@ -200,6 +200,7 @@ rule extractSignificantFeatures1KG:
         outputString = ",".join(formattedSignificantFeatures)
         with open(output.sigFeatureFile, "w") as o:
             o.write(outputString)
+
 rule runVAASTOnBM1452RecessiveComplete1KG:
     input: target = "results/vaastOutput/VST/BM1452Target.cdr",
            trio = "results/vaastOutput/VST/BM1452Background.union.cdr",
@@ -237,8 +238,8 @@ rule runVAASTOnBM1452RecessiveComplete:
     shell: """
     VAAST \
     --mode lrt \
-    --inheritance r \
-    --penetrance c \
+    --inheritance d \
+    --penetrance i \
     --locus_heterogeneity y \
     -gp 1e05 \
     --fast_gp \
@@ -317,7 +318,7 @@ rule runVAT:
     VAT \
     --features {input[1]} \
     --build hg19 \
-    -c 100000000 \
+    --chunk 100000000 \
     --fasta {input[2]} \
     {input[0]} \
     > {output}"""

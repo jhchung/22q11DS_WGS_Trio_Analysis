@@ -5,7 +5,7 @@ import os
 
 workdir: "/home/jchung/projects/wgs/"
 # Path to required programs
-annovar_dir = '/home/jchung/programs/annovar/annovar2013Aug23/'
+annovar_dir = '/home/jchung/programs/annovar/annovar2014Jul14/'
 vcftools = "/apps1/vcftools/vcftools_0.1.11/cpp/vcftools"
 vcftools_vcfisec = "/apps1/vcftools/vcftools_0.1.11/perl/vcf-isec"
 
@@ -26,15 +26,16 @@ var_freq     = ["maf_0.01", "maf_0.05", "novel", "all"]
 def remove_superdup(input, output):
     """Remove variants that are found in genomic superdup regions.
     
+    Creates an output file without variants in genomic superdups.
+    
     Args:
         input: Path to the input file.
         output: Path to the output file.
     Returns:
-        Creates an output file without variants in genomic superdups.
+        None
     """
     in_file = open(input, "r")
     out_file = open(output, "w")
-
     for line in in_file:
         if line.startswith("Chr\tStart"):
             split_line = line.split("\t")
@@ -49,7 +50,21 @@ def remove_superdup(input, output):
     in_file.close()
     out_file.close()
 
-def extract_conserved_elements(input, output, conservation_column, score_cutoff):
+def extract_conserved_elements(input, output, conservation_column, 
+                               score_cutoff):
+    """Extract variants that have conservation scores >= score_cutoff.
+    
+    Creates an output file with variants that have a conservation score
+        >= score cutoff.
+    
+    Args:
+        input: Path to input file.
+        output: Path to output file.
+        conservation_column: Name of the column containing conservation scores.
+        score_cutoff: Minimum conservation score.
+    Returns:
+        None
+    """
     in_file = open(input, "r")
     out_file = open(output, "w")
     score_index = None
@@ -93,11 +108,13 @@ def parse_coding_vs_noncoding(input, output_exonic, output_noncoding):
         * downstream
         * intergenic
     
+    Creates an output file with only noncoding variants.
+    
     Args:
         input: Path to input file.
         output: Path to output file.
     Returns:
-        Creates an output file with only noncoding variants.
+        None
     """
     in_file = open(input, "r")
     exonic_out_file = open(output_exonic, "w")
@@ -133,11 +150,13 @@ def extract_nonsynonymous_variants(input, output):
         * frameshift deletion
         * frameshift block substitution
     
+    Creates an output file with nonsynonymous variants.
+    
     Args:
         input: Path to input file
         output: Path to output file
     Returns:
-        Creates an output file with nonsynonymous variants
+        None
     """
     in_file = open(input, "r")
     out_file = open(output, "w")
@@ -160,7 +179,7 @@ def extract_nonsynonymous_variants(input, output):
     out_file.close()
 
 def extract_deleterious_variants(input, output, deleterious_score_cutoff):
-    """Extract deleterious variants.
+    """Extract deleterious variants from input file.
     
     Extract variants that are predicted to be deleterious.
     
@@ -175,8 +194,8 @@ def extract_deleterious_variants(input, output, deleterious_score_cutoff):
         output: Path to output file.
         deleterious_score_cutoff: Integer indicating the number of methods 
             needed to define a nonsynonymous variant as deleterious.
-    Return:
-        Creates an output file with deleterious variants.
+    Returns:
+        None
     """
     deleterious_score_cutoff = int(deleterious_score_cutoff)
     in_file = open(input, "r")
@@ -228,22 +247,21 @@ def extract_deleterious_variants(input, output, deleterious_score_cutoff):
     in_file.close()
     out_file.close()
 
-def extract_novel_variants(
-    input, 
-    output, 
-    dbsnp_database = "snp138", 
-    esp_database = "esp6500si_all", 
-    thousand_genomes_database = "1000g2012apr_all"):
+def extract_novel_variants(input, output, dbsnp_database = "generic", 
+                           esp_database = "esp6500si_all", 
+                           thousand_genomes_database = "1000g2012apr_all"):
     """Remove variants from population databases.
+    
+    Creates an output file with all variants in dbSNP, ESP, and 1KG removed.
     
     Args:
         input: Path to input file.
         output: Path to output file.
-        dbsnp_database: Name of the dbsnp_database to filter on.
-        esp_database: Name of the exome sequencing project databse to filter on.
-        thousand_genomes_database: Name of the 1000 Genomes database to filter on.
+        dbsnp_database: Name of column with dbSNP information.
+        esp_database: Name of column with exome sequencing project information.
+        thousand_genomes_database: Name of column with 1000 Genomes information.
     Returns:
-        Creates an output file with all 
+        None
     """
     in_file = open(input, "r")
     out_file = open(output, "w")
@@ -275,6 +293,8 @@ def extract_rare_variants(input, output, maf_cutoff):
         input: Path to input file.
         output: Path to output file.
         maf_cutoff: Minor allele frequency cutoff
+    Returns:
+        None
     """
     in_file = open(input, "r")
     out_file = open(output, "w")
@@ -302,8 +322,8 @@ def check_alt_in_genotype(genotype):
     Args:
         genotype: genotype in VCF format.
     Returns:
-        boolean indicating whether an alternative allele is present. None if the
-        genotype is missing.
+        bool: True if genotype contains alternate allele, False if homozygous
+            reference, None if missing.
     """
     genotype = genotype.split(":")[0]
     if "." in genotype:
@@ -319,7 +339,7 @@ def check_alt_allele_status(genotype):
     Args:
         genotype: genotype in VCF format.
     Returns:
-        string indicating the type allele status. `heterozygous' if one minor
+        String indicating the type allele status. `heterozygous' if one minor
         allele. `homozygous' if two minor alleles. None if missing.
     """
     genotype = genotype.split(":")[0]
@@ -340,7 +360,7 @@ def check_inherited_variant(proband_genotype, father_genotype, mother_genotype,
         mother_genotype: genotype of mother in VCF format.
         inherited_from: string indicating which parent to check.
     Returns:
-        boolean indicating if inheritance makes sense.
+        bool: True if inheritance passes sanity check, False otherwise.
     """
     proband_alt = check_alt_in_genotype(proband_genotype)
     father_alt = check_alt_in_genotype(father_genotype)
@@ -360,9 +380,20 @@ def check_inherited_variant(proband_genotype, father_genotype, mother_genotype,
             meet_criteria = all([proband_alt, not father_alt, mother_alt])
     return meet_criteria
 
-def extract_inherited_variant(input, output,proband_id, father_id, mother_id, 
+def extract_inherited_variant(input, output, proband_id, father_id, mother_id, 
     inherited_from):
-    """
+    """Extract variants that are inherited from specified parent parent.
+    
+    Args:
+        input: Path to input file.
+        ouptut: Path to output file.
+        proband_id: Character string indicating proband ID.
+        father_id: Character string indicating father ID.
+        mother_id: Character string indicating mother ID.
+        inherited_from: Character string one of ["mother", "father"] indicating
+            which parent to check for inheritence.
+    Return:
+        None
     """
     in_file = open(input, "r")
     out_file = open(output, "w")
@@ -388,14 +419,27 @@ def extract_inherited_variant(input, output,proband_id, father_id, mother_id,
     out_file.close()
     in_file.close()
 
-def check_alt_allele_ratio(
-    genotype, allele_counts,hom_ref_cutoff = 0.15, het_low_cutoff = 0.3, 
-    het_high_cutoff = 0.7, hom_alt_cutoff = 0.85):
-    """Calculate alternate allele ratio and determine if it falls within QC
+def check_alt_allele_ratio(genotype, allele_counts, hom_ref_cutoff = 0.15,
+                           het_low_cutoff = 0.3, het_high_cutoff = 0.7, 
+                           hom_alt_cutoff = 0.85):
+    """Check if alternate allele ratio is within QC bounds.
+    
+    Calculate alternate allele ratio and determine if it falls within QC
     measures.
     
     Args:
-        
+        genotype: Subject genotype.
+        allele_counts: Genotype allele counts.
+        hom_ref_cutoff: Maximum alternate allele ratio for homozygous reference
+            genotype.
+        het_low_cutoff: Minimum alternate allele ratio for heterozygous 
+            genotype.
+        het_high_cutoff: Maximum alternate allele ratio for heterozygous
+            genotype.
+        hom_alt_cutoff: Minimum alternate allele ratio for homozygous alternate
+            genotype.
+    Returns:
+        bool: True if genotype passes QC, False otherwise.
     """
     allele_counts = allele_counts.split(",")
     ref_count = float(allele_counts[0])
@@ -424,14 +468,30 @@ def check_alt_allele_ratio(
             else:
                 return True
 
-def check_genotype_quality(quality_score):
-    if int(quality_score) < 20:
+def check_genotype_quality(quality_score, score_cutoff = 20):
+    """Check if genotype quality is >= cutoff.
+    
+    Args:
+        quality_score: Genotype quality score.
+        score_cutoff: Minimum genotype quality score.
+    Returns:
+        bool: True if quality score passes QC, False otherwise.
+    """
+    if int(quality_score) < score_cutoff:
         return False
     else:
         return True
 
-def check_read_depth(read_depth):
-    if int(read_depth) < 15:
+def check_read_depth(read_depth, depth_cutoff = 15):
+    """Check if genotype read depth is >= cutoff.
+    
+    Args:
+        read_depth: Genotype quality score.
+        depth_cutoff: Minimum genotype read depth.
+    Returns:
+        bool: True if read depth passes QC, False otherwise.
+    """
+    if int(read_depth) < depth_cutoff:
         return False
     else:
         return True
@@ -447,7 +507,7 @@ def genotype_quality_control(genotype_info):
     Args:
         genotype_info: Genotype to test.
     Returns:
-        boolean indicating whether the genotype passes all quality control tests.
+        bool: True if genotype passes all QC tests, False otherwise.
     """
     genotype_split = genotype_info.split(":")
     if "." in genotype_split[0]:
@@ -462,6 +522,19 @@ def genotype_quality_control(genotype_info):
         return pass_qc
 
 def extract_denovo_variants(input, output, proband_id, father_id, mother_id):
+    """Extract *de novo* variants.
+    
+    Extracts *de novo* variants from input file and saves them into the output.
+    
+    Args:
+        input: Path to input file.
+        output: Path to output file.
+        proband_id: String describing proband ID.
+        father_id: String describing father ID.
+        mother_id: String describing mother ID.
+    Returns:
+        None
+    """
     in_file = open(input, "r")
     out_file = open(output, "w")
     
@@ -533,8 +606,8 @@ def summarize_exonic_functions(input, output):
     frameshift_block_sub = all_exonic_function.count(
         "frameshift block substitution"
     )
-    stopgain = all_exonic_function.count("stopgain SNV")
-    stoploss = all_exonic_function.count("stoploss SNV")
+    stopgain = all_exonic_function.count("stopgain")
+    stoploss = all_exonic_function.count("stoploss")
     nonframeshift_insertion = all_exonic_function.count(
         "nonframeshift insertion"
     )
@@ -578,6 +651,8 @@ def summarize_variant_function(input, output):
     Args:
         input: Path to input file.
         output: Path to output file.
+    Returns:
+        None
     """
     variant_function_column = "Func.refGene"
     all_variant_function = []
@@ -617,15 +692,19 @@ def summarize_variant_function(input, output):
 
 def count_population_database(input, output, dbsnp_name = "snp138",
                               thousand_genomes_name = "1000g2012apr_all",
-                              esp_name = "esp6500si_all"):
+                              esp_name = "esp6500si_all",
+                              custom_dbsnp_name = "generic"):
     """Get a count of population database annotations.
     
     Args:
         input: Path to multianno ANNOVAR file.
         output: Path to output file
+    Returns:
+        None
     """
     
     dbsnp = []
+    custom_dbsnp = []
     thousand_genomes = []
     esp = []
     in_db = 0
@@ -634,6 +713,7 @@ def count_population_database(input, output, dbsnp_name = "snp138",
             if line.startswith("Chr\tStart"):
                 header = line.split("\t")
                 dbsnp_index = header.index(dbsnp_name)
+                custom_dbsnp_index = header.index(custom_dbsnp_name)
                 thousand_index = header.index(thousand_genomes_name)
                 esp_index = header.index(esp_name)
             elif not line.startswith("#"):
@@ -647,6 +727,7 @@ def count_population_database(input, output, dbsnp_name = "snp138",
                     in_db = in_db + 1
     total = len(dbsnp)
     in_dbsnp = total - dbsnp.count("")
+    in_custom_dbsnp = total - custom_dbsnp.count("")
     in_thousand_genomes = total - thousand_genomes.count("")
     in_esp = total - esp.count("")
     novel = total - in_db
@@ -655,10 +736,75 @@ def count_population_database(input, output, dbsnp_name = "snp138",
         out_file.write("Database\tCount\n")
         out_file.write("All variants\t{0}\n".format(total))
         out_file.write("In any DB\t{0}\n".format(in_db))
-        out_file.write("In dbSNP138\t{0}\n".format(in_dbsnp))
+        out_file.write("In dbSNP\t{0}\n".format(in_dbsnp))
+        out_file.write("In custom dbsnp138\t{0}\n".format(in_custom_dbsnp))
         out_file.write("In 1KG\t{0}\n".format(in_thousand_genomes))
         out_file.write("In ESP6500\t{0}\n".format(in_esp))
         out_file.write("Novel\t{0}\n".format(novel))
+
+def summarize_filtering_results(multianno_file, var_filter_file, superdup_file,
+                                noncoding_file, exonic_file, nonsynonymous_file,
+                                deleterious_file, output, var_filter_type):
+    """Create table summarizing filtering results.
+    
+    Args:
+        multianno_file: Path to multianno ANNOVAR file.
+        var_filter_file: Path to variants after initial filtering.
+        superdup_file: Path to file after removeing variants in superdup 
+            regions.
+        noncoding_file: Path to file containing non-coding variants.
+        exonic_file: Path to file containing exonic variants.
+        nonsynonymous_file: Path to file with nonsynonymous variants.
+        deleterious_file: Path to file with deleterious variants.
+        output: Path to output file.
+        var_filter_type: Type of variant. One of ``["snv", "indel"]``.
+    Returns:
+        None
+    """
+    multianno_count = count_vars_in_file(multianno_file)
+    var_filter_count = count_vars_in_file(var_filter_file)
+    
+    noncoding_count = count_vars_in_file(noncoding_file)
+    exonic_count = count_vars_in_file(exonic_file)
+    nonsynonymous_count = count_vars_in_file(nonsynonymous_file)
+    deleterious_count = count_vars_in_file(deleterious_file)
+    
+    # For 22q11 region, I don't filter on superdups.
+    if superdup_file == "None":
+        superdup_count = "NA"
+    else:
+        superdup_count = count_vars_in_file(superdup_file)
+    
+    with open(output, "w") as out_file:
+        out_file.write("Filtering step\tCount\n")
+        out_file.write("All variants\t{0}\n".format(multianno_count))
+        out_file.write("{0}\t{1}\n".format(var_filter_type, var_filter_count))
+        out_file.write("Genomic SuperDups\t{0}\n".format(superdup_count))
+        out_file.write("Non-coding variants\t{0}\n".format(noncoding_count))
+        out_file.write("Exonic variants\t{0}\n".format(exonic_count))
+        out_file.write("Non-synonymous variants\t{0}\n".format(
+            nonsynonymous_count
+        ))
+        out_file.write("Deleterious variants\t{0}\n".format(deleterious_count))
+
+def count_vars_in_file(input):
+    """Count variants in input file.
+    
+    Args:
+        input: Path to input file.
+    Returns:
+        None
+    """
+    lines = 0
+    with open(input) as in_file:
+        for line in in_file:
+            if (line.startswith("#") or 
+                line.startswith("Chr\tStart")):
+                # print("Skipping header")
+                pass
+            else:
+                lines = lines + 1
+    return(lines)
 
 ################################################################################
 # Begin Rules
@@ -704,7 +850,7 @@ rule split_indel_snv_rare:
 rule count_variants_tbx1_pathway_genic_lod100:
     input:
         os.path.join(
-            "results/annovar_output/genic_lod100",
+            "results/annovar/output/genic_lod100",
             "wgs_phased_all_variants.hg19_multianno.genic.lod100.txt"
         ),
         "data/tbx1_pathway_genes_2014_03_27.txt"
@@ -723,7 +869,7 @@ rule count_variants_tbx1_pathway_genic_lod100:
 rule count_variants_tbx1_pathway_all_lod100:
     input:
         os.path.join(
-            "results/annovar_output/all_lod100",
+            "results/annovar/output/all_lod100",
             "wgs_phased_all_variants.hg19_multianno.lod100.txt"
         ),
         "data/tbx1_pathway_genes_2014_03_27.txt"
@@ -741,124 +887,420 @@ rule count_variants_tbx1_pathway_all_lod100:
 
 rule checkpoint1:
     input:
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.filtering_summary.txt", 
-               VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar/output/counts/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.var_function.txt",
-               VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar/output/counts/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.exonic_function.txt", VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.filtering_summary.txt", FREQ = var_freq, VAR_TYPE = var_type, SAMPLEID = sampleid),
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.var_function.txt", FREQ = var_freq, VAR_TYPE = var_type, SAMPLEID = sampleid),
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.exonic_function.txt", FREQ = var_freq, VAR_TYPE = var_type, SAMPLEID = sampleid),
-        "results/annovar/output/counts/wgs_phased_snp.all_samples.pop_counts.txt",
-        "results/annovar/output/counts/wgs_phased_indel.all_samples.pop_counts.txt"
-################
-# 
-################
-
-rule denovo_novel_rare_all:
-    input:
-        "results/annovar_output/counts/denovo.wgs_phased_snp.all_samples.summary.txt",
-        "results/annovar_output/counts/denovo.wgs_phased_indel.all_samples.summary.txt",
-        expand("results/annovar_output/variant_filtering/novel/snp138.wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.novel.genic.deleterious.counts.txt", VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar_output/variant_filtering/rare/snp138.wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.rare.genic.deleterious.counts.txt", VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar_output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.genic.deleterious.txt", VAR_TYPE = var_type, SAMPLEID = probandid),
-        expand("results/annovar_output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.summary.txt", VAR_TYPE = var_type, SAMPLEID = probandid)
+        expand(
+            os.path.join("results/annovar/output/counts",
+                        ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}."
+                         "remaining22q11.filtering_summary.txt")), 
+            VAR_TYPE = var_type, 
+            SAMPLEID = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}."
+                 "remaining22q11.exonic.nonsyn.deleterious.var_function.txt")
+            ), 
+            VAR_TYPE = var_type, 
+            SAMPLEID = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11."
+                 "exonic.nonsyn.deleterious.exonic_function.txt")
+            ),
+            VAR_TYPE = var_type, 
+            SAMPLEID = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+                 "filtering_summary.txt")
+            ), 
+            FREQ = var_freq, 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+                 "nosuperdup.exonic.deleterious.var_function.txt")
+            ), 
+            FREQ = var_freq, 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+                 "nosuperdup.exonic.deleterious.exonic_function.txt")
+            ),
+            FREQ = var_freq, 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/variant_filtering/{FREQ}",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+                 "nosuperdup.exonic.deleterious.txt")
+            ), 
+            FREQ = var_freq, 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.pop_counts.txt"
+            ),
+            VAR_TYPE = var_type,
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts/",
+                "wgs_phased_{VAR_TYPE}.all_sample.pop_counts.txt"
+            ),
+            VAR_TYPE = var_type
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}."
+                 "nosuperdup.exonic.deleterious.var_function.txt")
+            ),
+            VAR_TYPE = var_type,
+            FREQ = var_freq
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}."
+                 "nosuperdup.exonic.deleterious.exonic_function.txt")
+            ),
+            VAR_TYPE = var_type,
+            FREQ = var_freq
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}."
+                 "filtering_summary.txt")
+            ),
+            VAR_TYPE = var_type,
+            FREQ = var_freq
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.var_function.txt"
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo."
+                 "exonic_function.txt")
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo_pop_counts.txt"
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo."
+                 "filtering_summary.txt")
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        )
 
 ################################################################################
 # de novo variant extraction
 ################################################################################
 rule denovo_all:
     input:
-        "results/annovar_output/counts/denovo.wgs_phased_snp.all_samples.summary.txt",
-        "results/annovar_output/counts/denovo.wgs_phased_indel.all_samples.summary.txt"
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.var_function.txt"
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo."
+                 "exonic_function.txt")
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo_pop_counts.txt"
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo."
+                 "filtering_summary.txt")
+            ),
+            VAR_TYPE = var_type,
+            SAMPLE = probandid
+        )
 
-rule combine_variant_counts_denovo:
+rule denovo_summarize_variant_function:
     input:
-        expand("results/annovar_output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.txt", 
-               VAR_TYPE = var_type, SAMPLE = ["BM1452.001", "BM1453.001"])
+        os.path.join(
+            "results/annovar/output/multiannotation/denovo/",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt"
+        )
     output:
-        "results/annovar_output/counts/denovo.wgs_phased_snp.all_samples.summary.txt",
-        "results/annovar_output/counts/denovo.wgs_phased_indel.all_samples.summary.txt"
-    shell:"""
-        Rscript src/annovar_wgs_samples/merge_variant_count_summaries.R \
-        {output[0]} \
-        {output[1]} \
-        {input}
-    """
+        os.path.join(
+            "results/annovar/output/counts",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.var_function.txt"
+        )
+    run:
+        summarize_variant_function(input[0], output[0])
 
-rule summarize_denovo_variant_counts:
-    input: 
-        multianno = "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt",
-        dbsnp = "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_snp138_dropped",
-        onekg = "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_ALL.sites.2012_04_dropped",
-        exonic = "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.refGene.exonic_variant_function",
-        variant_function = "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.refGene.variant_function"
-    output: 
-        "results/annovar_output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.txt"
-    shell: """
-        grep -v -P "Chr\tStart" {input.multianno} | \
-            grep -v -E "^#" | \
-            awk 'END {{print "total\t",NR}}' > \
-            {output}
-        awk 'END {{print "In dbSNP138\t",NR}}' {input.dbsnp} \
-            >> {output}
-        awk 'END {{print "In 1kg (2012/10)\t",NR}}' {input.onekg} \
-            >> {output}
-        awk 'END {{print "Exonic\t",NR}}' {input.exonic} \
-            >> {output}
-        grep "nonsynonymous" {input.exonic} \
-            | awk 'END {{print "Nonsynonymous\t",NR}}' \
-            >> {output}
-        grep "stop" {input.multianno} \
-            | awk 'END {{print "Stop gain/loss\t",NR}}' \
-            >> {output}
-        grep "splicing" {input.multianno} \
-            | awk 'END {{print "Splice altering\t",NR}}' \
-            >> {output}
-        grep -w "frameshift" {input.multianno} \
-            | awk 'END {{print "Frameshift\t",NR}}' \
-            >> {output}
-        grep -w "intronic" {input.variant_function} \
-            | awk 'END {{print "Intronic\t",NR}}' \
-            >> {output}
-        grep -w "upstream" {input.variant_function} \
-            | awk 'END {{print "Upstream\t",NR}}' \
-            >> {output}
-        grep -w "downstream" {input.variant_function} \
-            | awk 'END {{print "Downstream\t",NR}}' \
-            >> {output}
-        grep -w "intergenic" {input.variant_function} \
-            | awk 'END {{print "Intergenic\t",NR}}' \
-            >> {output}
-    """
+rule denovo_summarize_exonic_function:
+    input:
+        os.path.join(
+            "results/annovar/output/multiannotation/denovo/",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt"
+        )
+    output:
+        os.path.join(
+            "results/annovar/output/counts",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.exonic_function.txt"
+        )
+    run:
+        summarize_exonic_functions(input[0], output[0])
 
-rule table_annotation_denovo:
+rule denovo_population_counts:
     input: 
-        "data/for_annovar/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.avinput"
+        os.path.join(
+            "results/annovar/output/multiannotation/denovo/",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt"
+        )
+    output:
+        os.path.join(
+            "results/annovar/output/counts",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo_pop_counts.txt"
+        )
+    message:"""
+    Summarize counts of the different annotations.
+    
+    Get the counts of variants that have annotations for:
+        
+        * All variants
+        * Found in dbSNP138
+        * Found in custom dbsnp138
+        * Found in 1kg 
+        * Found in ESP6500
+        * Found in any DB
+        * Novel variants
+    
+    Input: {input}
+    Output: {output}
+    """
+    run:
+        count_population_database(input[0], output[0])
+
+rule denovo_summarize_filtering_steps:
+    input:
+        multianno_file = os.path.join(
+            "results/annovar/output/multiannotation/indiv_samples/{SAMPLE}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.hg19_multianno.txt"
+        ),
+        var_filter_file = os.path.join(
+            "results/annovar/output/multiannotation/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt"
+        ),
+        superdup_file = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup.txt"
+        ),
+        noncoding_file = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "noncoding.txt")
+        ),
+        exonic_file = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.txt")
+        ),
+        nonsynonymous_file = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.nonsyn.txt")
+        ),
+        deleterious_file = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.deleterious.txt")
+        )
+    params:
+        var_filter_type = "Allele frequency: de novo"
+    output:
+        os.path.join(
+            "results/annovar/output/counts",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo."
+             "filtering_summary.txt")
+        )
+    run:
+        summarize_filtering_results(
+            multianno_file = input.multianno_file,
+            var_filter_file = input.var_filter_file,
+            superdup_file = input.superdup_file,
+            noncoding_file = input.noncoding_file,
+            exonic_file = input.exonic_file,
+            nonsynonymous_file = input.nonsynonymous_file,
+            deleterious_file = input.deleterious_file,
+            output = output[0],
+            var_filter_type = params.var_filter_type
+        )
+
+rule denovo_extract_deleterious:
+    input:
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.nonsyn.txt")
+        )
+    params:
+        deleterious_count_cutoff = "2"
+    output:
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.deleterious.txt")
+        )
+    run:
+        extract_deleterious_variants(input[0], output[0], 
+                                     params.deleterious_count_cutoff)
+    
+rule denovo_extract_nonsynonymous:
+    input:
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.txt")
+        ),
+    output:
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.nonsyn.txt")
+        )
+    run:
+        extract_nonsynonymous_variants(input[0], output[0])
+
+rule denovo_parse_coding_noncoding:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup.txt"
+        )
+    output:
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "exonic.txt")
+        ),
+        noncoding = os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup."
+             "noncoding.txt")
+        )
+    message:"""
+    Split input file into coding and noncoding variants.
+    
+    Input: {input}
+    Output: {output}
+    """
+    run:
+        parse_coding_vs_noncoding(input[0], output.exonic, output.noncoding)
+
+rule denovo_remove_superdup:
+    input:
+        os.path.join(
+            "results/annovar/output/multiannotation/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt"
+        )
+    output:
+        os.path.join(
+            "results/annovar/output/variant_filtering/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.nosuperdup.txt"
+        )
+    run:
+        remove_superdup(input[0], output[0])
+    
+rule denovo_table_annotation:
+    input: 
+        os.path.join(
+            "results/annovar/input/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.avinput"
+        ),
+        "/cork/jchung/annovar/humandb/hg19_custom_dbsnp138.txt"
+        
     params: 
-        output_prefix = "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo"
+        output_prefix = os.path.join(
+            "results/annovar/output/multiannotation/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo"),
+        protocol = ",".join(["refGene", "phastConsElements46way", 
+                             "genomicSuperDups", "esp6500si_all", 
+                             "1000g2012apr_all", "snp138", "generic",
+                             "ljb23_all"]),
+        operation = "g,r,r,f,f,f,f,f",
+        build = "hg19",
+        custom_db = "hg19_custom_dbsnp138.txt"
     output: 
-        "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt",
-        "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_snp138_dropped",
-        "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_ALL.sites.2012_04_dropped",
-        "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.refGene.exonic_variant_function",
-        "results/annovar_output/multiannotation/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.refGene.variant_function"
+        os.path.join(
+            "results/annovar/output/multiannotation/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.hg19_multianno.txt"
+        )
     shell: """
     {annovar_dir}/table_annovar.pl \
-    {input} \
+    {input[0]} \
     {annovar_dir}/humandb/ \
-    --protocol refGene,phastConsElements46way,genomicSuperDups,esp6500si_all,1000g2012apr_all,snp138,ljb23_all \
-    --operation g,r,r,f,f,f,f \
-    --buildver hg19 \
+    --protocol {params.protocol} \
+    --operation {params.operation} \
+    --buildver {params.build} \
+    --genericdbfile {params.custom_db} \
     --outfile {params.output_prefix} \
     --otherinfo
     """
 
 rule convert_denovo_to_avinput:
     input:
-        "data/indiv_samples/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.vcf"
+        os.path.join("results/annovar/input/denovo",
+                     "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.vcf")
     output:
-        "data/for_annovar/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.avinput"
+        os.path.join(
+            "results/annovar/input/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.avinput")
     shell: """
         {annovar_dir}/convert2annovar.pl \
         -format vcf4 {input} \
@@ -869,11 +1311,18 @@ rule convert_denovo_to_avinput:
     """
 
 rule split_denovo_vcf_file:
-    input: "data/indiv_samples/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.vcf"
-    params: 
+    input:
+        os.path.join("results/annovar/input/denovo",
+                     "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.vcf")
+    params:
         subject = "{SAMPLE}",
-        output_prefix = "data/indiv_samples/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo"
-    output: "data/indiv_samples/denovo/wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.vcf"
+        output_prefix = os.path.join(
+            "results/annovar/input/denovo",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo"
+        )
+    output: 
+        os.path.join("results/annovar/input/denovo",
+                     "wgs_phased_{VAR_TYPE}.sample.{SAMPLE}.denovo.recode.vcf")
     shell: """
         {vcftools} \
         --vcf {input} \
@@ -891,7 +1340,8 @@ rule extract_denovo_variants_bm1453:
         father = "BM1453.200",
         mother = "BM1453.100"
     output:
-        "data/indiv_samples/denovo/wgs_phased_{VAR_TYPE}.sample.BM1453.001.denovo.vcf"
+        os.path.join("results/annovar/input/denovo",
+                     "wgs_phased_{VAR_TYPE}.sample.BM1453.001.denovo.vcf")
     run:
         extract_denovo_variants(input[0], 
                                 output[0], 
@@ -907,129 +1357,14 @@ rule extract_denovo_variants_bm1452:
         father = "BM1452.200",
         mother = "BM1452.100"
     output:
-        "data/indiv_samples/denovo/wgs_phased_{VAR_TYPE}.sample.BM1452.001.denovo.vcf"
+        os.path.join("results/annovar/input/denovo",
+                     "wgs_phased_{VAR_TYPE}.sample.BM1452.001.denovo.vcf")
     run:
         extract_denovo_variants(input[0], 
                                 output[0], 
                                 params.proband, 
                                 params.father, 
                                 params.mother)
-
-################################################################################
-# Rare inherited extraction
-################################################################################
-rule rare_inherited_all:
-    input: expand("results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.rare.genic.deleterious.txt", VAR_TYPE = var_type, SAMPLEID = "BM1452.001")
-
-rule rare_inherited_extract_deleterious:
-    input:
-        "results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.rare.genic.txt"
-    params: deleterious_score_cutoff = "2"
-    output:
-        "results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.rare.genic.deleterious.txt"
-    run:
-        extract_deleterious_variants(input[0], output[0], params.deleterious_score_cutoff)
-
-rule rare_inherited_extract_genic:
-    input: "results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.rare.txt"
-    output: "results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.rare.genic.txt"
-    run:
-        extract_exonic_variants(input[0], output[0])
-
-rule rare_inherited_extract_population:
-    input:
-        "results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.txt"
-    params: maf_cutoff = "0.05"
-    output:
-        "results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.rare.txt"
-    run:
-        extract_rare_variants(input[0], output[0], params.maf_cutoff)
-
-rule rare_inherited_remove_superdup:
-    input: "results/annovar_output/inherited_multiannotation/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
-    output: "results/annovar_output/variant_filtering/rare_inherited/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.nosuperdup.txt"
-    run:
-        remove_superdup(input[0], output[0])
-
-rule rare_inherited_table_annotation_indiv:
-    input: "results/indiv_avinput/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.avinput"
-    params: output_prefix = "results/annovar_output/inherited_multiannotation/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}"
-    output: 
-        "results/annovar_output/inherited_multiannotation/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt",
-        "results/annovar_output/inherited_multiannotation/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_snp138_dropped",
-        "results/annovar_output/inherited_multiannotation/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_ALL.sites.2012_04_dropped",
-        "results/annovar_output/inherited_multiannotation/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.refGene.exonic_variant_function"
-    shell: """
-    {annovar_dir}/table_annovar.pl \
-    {input} \
-    {annovar_dir}/humandb/ \
-    --protocol refGene,phastConsElements46way,genomicSuperDups,esp6500si_all,1000g2012apr_all,snp138,ljb23_all \
-    --operation g,r,r,f,f,f,f \
-    --buildver hg19 \
-    --outfile {params.output_prefix} \
-    --otherinfo
-    """
-
-rule rare_inherited_convert_to_annovar_indiv:
-    input: "data/indiv_samples/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
-    output: "results/indiv_avinput/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.avinput"
-    shell: """
-        {annovar_dir}/convert2annovar.pl \
-        -format vcf4 {input} \
-        -outfile {output} \
-        -includeinfo \
-        -filter PASS \
-        -comment
-    """
-
-rule rare_inherited_qc_genotype_indiv:
-    input: "data/indiv_samples/inherited.wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
-    params: sample = "{SAMPLEID}"
-    output: "data/indiv_samples/inherited.qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
-    run:
-        in_file = open(input[0], "r")
-        out_file = open(output[0], "w")
-
-        for line in in_file:
-            if line.startswith("##"):
-                out_file.write(line)
-            elif line.startswith("#CHROM"):
-                line_split = line.split()
-                genotype_index = line_split.index(params.sample)
-                out_file.write(line)
-            else:
-                line_split = line.split()
-                genotype = line_split[genotype_index]
-                pass_qc = genotype_quality_control(genotype)
-
-                if pass_qc:
-                    out_file.write(line)
-
-rule rare_inherited_split_vcf_file:
-    input: "data/for_annovar/wgs_phased_{VAR_TYPE}_filtered_inherited.vcf"
-    params: 
-        subject = "{SAMPLEID}",
-        output_prefix = "data/indiv_samples/inherited.wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}"
-    output: "data/indiv_samples/inherited.wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
-    shell: """
-        {vcftools} \
-        --vcf {input} \
-        --indv {params.subject} \
-        --out {params.output_prefix} \
-        --recode \
-        --recode-INFO-all
-    """
-
-rule rare_inherited_extract_inherited:
-    input: "data/for_annovar/wgs_phased_{VAR_TYPE}_filtered.vcf"
-    params:
-        proband_id = "BM1452.001",
-        father_id = "BM1452.200",
-        mother_id = "BM1452.100",
-        inherited_from = "father"
-    output: "data/for_annovar/wgs_phased_{VAR_TYPE}_filtered_inherited.vcf"
-    run:
-        extract_inherited_variant(input[0], output[0], params.proband_id, params.father_id, params.mother_id, params.inherited_from)
 
 ################################################################################
 # Remaining allele of chr22q11
@@ -1045,14 +1380,14 @@ rule check_22q11_genes:
             VAR_TYPE = var_type, SAMPLEID = probandid),
         expand(
             os.path.join(
-                "results/annovar/output/counts/remaining_22q11",
+                "results/annovar/output/counts",
                 ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}."
                  "remaining22q11.exonic.nonsyn.deleterious.var_function.txt")
             ), 
             VAR_TYPE = var_type, SAMPLEID = probandid),
         expand(
             os.path.join(
-                "results/annovar/output/counts/remaining_22q11",
+                "results/annovar/output/counts",
                 ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11."
                  "exonic.nonsyn.deleterious.exonic_function.txt")
             ),
@@ -1060,17 +1395,33 @@ rule check_22q11_genes:
 
 rule chr22q11_summarize_variant_function:
     input:
-        "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.exonic.nonsyn.deleterious.txt")
+        )
     output:
-        "results/annovar/output/counts/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.var_function.txt"
+        os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}."
+                 "remaining22q11.exonic.nonsyn.deleterious.var_function.txt")
+            )
     run:
         summarize_variant_function(input[0], output[0])
 
 rule chr22q11_summarize_exonic_function:
     input:
-        "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.exonic.nonsyn.deleterious.txt")
+        )
     output:
-        "results/annovar/output/counts/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.exonic_function.txt"
+        os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11."
+                 "exonic.nonsyn.deleterious.exonic_function.txt")
+            )
     run:
         summarize_exonic_functions(input[0], output[0])
 
@@ -1104,70 +1455,79 @@ rule chr22q11_summarize_filtering_steps:
             ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
              "remaining22q11.exonic.nonsyn.deleterious.txt")
         )
+    params:
+        var_filter_type = "Variants on chr22q11.2"
     output:
         os.path.join(
             "results/annovar/output/counts",
             ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}."
              "remaining22q11.filtering_summary.txt")
         )
-    shell: """
-    echo -e "Filtering step\tVariants" > {output}
-    grep -v -P "Chr\tStart" {input.multianno_file} \
-        | grep -v -E "^#" \
-        | awk 'END {{print "22q11.2 deleted region\t",NR}}' \
-        >> {output}
-    # total variants
-    grep -v -P "Chr\tStart" {input.chr22_file} \
-        | grep -v -E "^#" \
-        | awk 'END {{print "22q11.2 deleted region\t",NR}}' \
-        >> {output}
-    # non-coding variants
-    grep -v -P "Chr\tStart" {input.noncoding_file} \
-        | grep -v -E "^#" \
-        | awk 'END {{print "Non-coding\t",NR}}' \
-        >> {output}
-    # Exonic variants
-    grep -v -P "Chr\tStart" {input.exonic_file} \
-        | grep -v -E "^#" \
-        | awk 'END {{print "Exonic\t",NR}}' \
-        >> {output}
-    # Non-synonymous variants
-    grep -v -P "Chr\tStart" {input.nonsynonymous_file} \
-        | grep -v -E "^#" \
-        | awk 'END {{print "Non-synonymous\t",NR}}' \
-        >> {output}
-    # Deleterious variants
-    grep -v -P "Chr\tStart" {input.deleterious_file} \
-        | grep -v -E "^#" \
-        | awk 'END {{print "Deleterious\t",NR}}' \
-        >> {output}
-    """
+    run:
+        summarize_filtering_results(
+            multianno_file = input.multianno_file,
+            var_filter_file = input.chr22_file,
+            superdup_file = "None",
+            noncoding_file = input.noncoding_file,
+            exonic_file = input.exonic_file,
+            nonsynonymous_file = input.nonsynonymous_file,
+            deleterious_file = input.deleterious_file,
+            output = output[0],
+            var_filter_type = params.var_filter_type
+        )
 
 rule chr22q11_extract_deleterious:
-    input: 
-        "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.txt"
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.exonic.nonsyn.txt")
+        )
     params: 
         deleterious_cutoff = "2"
     output: 
-        "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.deleterious.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.exonic.nonsyn.deleterious.txt")
+        )
     run:
         extract_deleterious_variants(input[0], output[0], 
                                      params.deleterious_cutoff)
 
 rule chr22q11_extract_nonsynonymous:
     input: 
-        "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.exonic.txt")
+        )
     output: 
-        "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.nonsyn.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.exonic.nonsyn.txt")
+        )
     run:
         extract_nonsynonymous_variants(input[0], output[0])
 
 rule chr22q11_parse_coding_noncoding:
     input:
-        "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.txt"
+        )
     output:
-        exonic = "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.exonic.txt",
-        noncoding = "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.noncoding.txt"
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.exonic.txt")
+        ),
+        noncoding = os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}." 
+             "remaining22q11.noncoding.txt")
+        )
     message:"""
     Parse exonic and noncoding variants.
     
@@ -1179,12 +1539,19 @@ rule chr22q11_parse_coding_noncoding:
 
 rule extract_22q11_genes:
     input:
-        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
+        os.path.join(
+            "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
+        )
     params:
         chromosome = "chr22",
         start = "18656000",
         stop = "21792000"
-    output: "results/annovar/output/variant_filtering/remaining_22q11/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.txt"
+    output: 
+        os.path.join(
+            "results/annovar/output/variant_filtering/remaining_22q11",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.remaining22q11.txt"
+        )
     message:"""
     Extract all variants on the remaining allele of chromosome 22q11.2.
     
@@ -1218,63 +1585,140 @@ rule extract_22q11_genes:
 ################################################################################
 rule check_indiv_filtering:
     input:
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.filtering_summary.txt", FREQ = var_freq, VAR_TYPE = var_type, SAMPLEID = sampleid),
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.var_function.txt", FREQ = var_freq, VAR_TYPE = var_type, SAMPLEID = sampleid),
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.exonic_function.txt", FREQ = var_freq, VAR_TYPE = var_type, SAMPLEID = sampleid)
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+                 "filtering_summary.txt")
+            ), 
+            FREQ = var_freq, 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+                 "nosuperdup.exonic.deleterious.var_function.txt")
+            ), 
+            FREQ = var_freq, 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/variant_filtering/{FREQ}",
+                ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+                 "nosuperdup.exonic.deleterious.txt")
+            ), 
+            FREQ = var_freq, 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        )
 
 rule indiv_summarize_variant_function:
     input:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.txt")
+        )
     output:
-        "results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.var_function.txt"
+        os.path.join(
+            "results/annovar/output/counts",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.var_function.txt")
+        )
     run:
         summarize_variant_function(input[0], output[0])
 
 rule indiv_summarize_exonic_function:
     input:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.txt")
+        )
     output:
-        "results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.exonic_function.txt"
+        os.path.join(
+            "results/annovar/output/counts",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.exonic_function.txt")
+        )
     run:
         summarize_exonic_functions(input[0], output[0])
 
-rule summarize_filtering_steps_indiv:
+rule indiv_summarize_filtering_steps:
     input:
-        multianno_file = "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt",
-        freq_file = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.txt",
-        superdup_file = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.txt",
-        noncoding_file = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.noncoding.txt",
-        exonic_file = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.txt",
-        nonsynonymous_file = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.nonsyn.txt",
-        deleterious_file = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.txt"
+        multianno_file = os.path.join(
+            "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
+        ),
+        var_filter_file = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.txt"
+        ),
+        superdup_file = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.txt")
+        ),
+        noncoding_file = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.noncoding.txt")
+        ),
+        exonic_file = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.txt")
+        ),
+        nonsynonymous_file = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.nonsyn.txt")
+        ),
+        deleterious_file = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.txt")
+        )
     params:
-        frequency = "{FREQ}"
+        var_filter_type = "Allele frequency: {FREQ}"
     output:
-        "results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.filtering_summary.txt"
-    shell: """
-    echo -e "Filtering step\tVariants" > {output}
-    grep -v -P "Chr\tStart" {input.multianno_file} | grep -v -E "^#" | awk 'END {{print "All variants\t",NR}}' >> {output}
-    # total variants
-    grep -v -P "Chr\tStart" {input.freq_file} | grep -v -E "^#" | awk 'END {{print "Allele frequency: {params.frequency}\t",NR}}' >> {output}
-    # Remove superdup variants
-    grep -v -P "Chr\tStart" {input.superdup_file} | grep -v -E "^#" | awk 'END {{print "Excluding genomic superdups\t",NR}}' >> {output}
-    # non-coding variants
-    grep -v -P "Chr\tStart" {input.noncoding_file} | grep -v -E "^#" | awk 'END {{print "Non-coding variants\t",NR}}' >> {output}
-    # Exonic variants
-    grep -v -P "Chr\tStart" {input.exonic_file} | grep -v -E "^#" | awk 'END {{print "Exonic variants\t",NR}}' >> {output}
-    # Non-synonymous variants
-    grep -v -P "Chr\tStart" {input.nonsynonymous_file} | grep -v -E "^#" | awk 'END {{print "Non-synonymous variants\t",NR}}' >> {output}
-    # Deleterious variants
-    grep -v -P "Chr\tStart" {input.deleterious_file} | grep -v -E "^#" | awk 'END {{print "Deleterious variants\t",NR}}' >> {output}
-    """
+        os.path.join(
+            "results/annovar/output/counts",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "filtering_summary.txt")
+        )
+    run:
+        summarize_filtering_results(
+            multianno_file = input.multianno_file,
+            var_filter_file = input.var_filter_file,
+            superdup_file = input.superdup_file,
+            noncoding_file = input.noncoding_file,
+            exonic_file = input.exonic_file,
+            nonsynonymous_file = input.nonsynonymous_file,
+            deleterious_file = input.deleterious_file,
+            output = output[0],
+            var_filter_type = params.var_filter_type
+        )
 
-rule extract_deleterious_indiv:
+rule indiv_extract_deleterious:
     input:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.nonsyn.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.nonsyn.txt")
+        )
     params:
         deleterious_count_cutoff = "2"
     output:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.deleterious.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.txt")
+        )
     message: """
     Extract deleterious exonic variants.
     
@@ -1282,13 +1726,22 @@ rule extract_deleterious_indiv:
     Output: {output}
     """
     run:
-        extract_deleterious_variants(input[0], output[0], params.deleterious_count_cutoff)
+        extract_deleterious_variants(input[0], output[0], 
+                                     params.deleterious_count_cutoff)
 
-rule extract_nonsynonymous_indiv:
+rule indiv_extract_nonsynonymous:
     input:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.txt")
+        )
     output:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.nonsyn.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.nonsyn.txt")
+        )
     message:"""
     Extract non-synonymous variants.
     
@@ -1298,12 +1751,24 @@ rule extract_nonsynonymous_indiv:
     run:
         extract_nonsynonymous_variants(input[0], output[0])
 
-rule parse_coding_noncoding_indiv:
+rule indiv_parse_coding_noncoding:
     input:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.txt")
+        )
     output:
-        exonic = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.exonic.txt",
-        noncoding = "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.noncoding.txt"
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.exonic.txt")
+        ),
+        noncoding = os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}."
+             "nosuperdup.noncoding.txt")
+        )
     message:"""
     Split input file into coding and noncoding variants.
     
@@ -1313,9 +1778,17 @@ rule parse_coding_noncoding_indiv:
     run:
         parse_coding_vs_noncoding(input[0], output.exonic, output.noncoding)
 
-rule remove_superdup_indiv:
-    input: "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.txt"
-    output: "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.txt"
+rule indiv_remove_superdup:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.txt"
+        )
+    output: 
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.nosuperdup.txt"
+        )
     message:"""
     Removing variants found in genomic superdups.
     
@@ -1325,13 +1798,19 @@ rule remove_superdup_indiv:
     run:
         remove_superdup(input[0], output[0])
 
-rule filter_on_variant_frequency:
+rule indiv_filter_on_variant_frequency:
     input:
-        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
+        os.path.join(
+            "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
+        )
     params:
         frequency = "{FREQ}"
     output:
-        "results/annovar/output/variant_filtering/{FREQ}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.txt"
+        os.path.join(
+            "results/annovar/output/variant_filtering/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.freq.{FREQ}.txt"
+        )
     run:
         if params.frequency == "all":
             shell("cp {input} {output}")
@@ -1347,11 +1826,27 @@ rule filter_on_variant_frequency:
 
 rule combine_population_counts:
     input:
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.pop_counts.txt", VAR_TYPE = var_type, SAMPLEID = sampleid),
-        expand("results/annovar/output/counts/wgs_phased_{VAR_TYPE}.all_sample.pop_counts.txt", VAR_TYPE = var_type)
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.pop_counts.txt"
+            ), 
+            VAR_TYPE = var_type, 
+            SAMPLEID = sampleid
+        ),
+        expand(
+            os.path.join(
+                "results/annovar/output/counts",
+                "wgs_phased_{VAR_TYPE}.all_sample.pop_counts.txt",
+            ),
+            VAR_TYPE = var_type)
     output:
-        snp_output = "results/annovar/output/counts/wgs_phased_snp.all_samples.pop_counts.txt",
-        indel_ouptut = "results/annovar/output/counts/wgs_phased_indel.all_samples.pop_counts.txt"
+        snp_output = os.path.join("results/annovar/output/counts",
+                                  "wgs_phased_snp.all_samples.pop_counts.txt"),
+        indel_ouptut = os.path.join(
+                           "results/annovar/output/counts",
+                           "wgs_phased_indel.all_samples.pop_counts.txt"
+                       )
     message:"""
     Combine variant counts from individuals into a single table.
     """
@@ -1364,9 +1859,15 @@ rule combine_population_counts:
 
 rule indiv_population_counts:
     input: 
-        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
-    output: 
-        "results/annovar/output/counts/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.pop_counts.txt"
+        os.path.join(
+            "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
+        )
+    output:
+        os.path.join(
+            "results/annovar/output/counts",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.pop_counts.txt"
+        )
     message:"""
     Summarize counts of the different annotations.
     
@@ -1374,6 +1875,7 @@ rule indiv_population_counts:
         
         * All variants
         * Found in dbSNP138
+        * Found in custom dbsnp138
         * Found in 1kg 
         * Found in ESP6500
         * Found in any DB
@@ -1386,13 +1888,26 @@ rule indiv_population_counts:
         count_population_database(input[0], output[0])
 
 rule table_annotation_indiv:
-    input: "results/annovar/input/qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.avinput"
-    params: output_prefix = "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}"
+    input: 
+        os.path.join("results/annovar/input",
+                     "qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.avinput"),
+        "/cork/jchung/annovar/humandb/hg19_custom_dbsnp138.txt"
+    params: 
+        output_prefix = os.path.join(
+            "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}"),
+        protocol = ",".join(["refGene", "phastConsElements46way", 
+                             "genomicSuperDups", "esp6500si_all", 
+                             "1000g2012apr_all", "snp138", "generic",
+                             "ljb23_all"]),
+        operation = "g,r,r,f,f,f,f,f",
+        build = "hg19",
+        custom_db = "hg19_custom_dbsnp138.txt"
     output: 
-        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt",
-        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_snp138_dropped",
-        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_ALL.sites.2012_04_dropped",
-        "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_esp6500si_all_dropped"
+        os.path.join(
+            "results/annovar/output/multiannotation/indiv_samples/{SAMPLEID}",
+            "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.hg19_multianno.txt"
+        )
     message: """
     Perform table annotation using annovar.
     
@@ -1411,11 +1926,12 @@ rule table_annotation_indiv:
     """
     shell: """
     {annovar_dir}/table_annovar.pl \
-    {input} \
+    {input[0]} \
     {annovar_dir}/humandb/ \
-    --protocol refGene,phastConsElements46way,genomicSuperDups,esp6500si_all,1000g2012apr_all,snp138,ljb23_all \
-    --operation g,r,r,f,f,f,f \
-    --buildver hg19 \
+    --protocol {params.protocol} \
+    --operation {params.operation} \
+    --buildver {params.build} \
+    --genericdbfile {params.custom_db} \
     --outfile {params.output_prefix} \
     --otherinfo
     """
@@ -1424,9 +1940,11 @@ rule table_annotation_indiv:
 # All sample CADD table annotations
 ################################################################################
 rule filter_cadd:
-    input: "results/annovar_output/cadd_annotation/wgs_phased_snp.cadd.hg19_cadd_dropped"
+    input: os.path.join("results/annovar_output/cadd_annotation",
+                        "wgs_phased_snp.cadd.hg19_cadd_dropped")
     params: scaled_cadd_cutoff = "20"
-    output: "results/annovar_output/cadd_annotation/wgs_phased_snp.cadd.hg19_cadd_dropped.filtered"
+    output: os.path.join("results/annovar_output/cadd_annotation",
+                         "wgs_phased_snp.cadd.hg19_cadd_dropped.filtered")
     run:
         in_file = open(input[0], "r")
         out_file = open(output[0], "w")
@@ -1441,9 +1959,15 @@ rule filter_cadd:
         out_file.close()
 
 rule annotate_novel_cadd:
-    input: "results/indiv_avinput/qc_wgs_phased_snp.sample.BM1452.001.avinput"
-    params: output_prefix = "results/annovar_output/cadd_annotation/wgs_phased_snp.cadd"
-    output: "results/annovar_output/cadd_annotation/wgs_phased_snp.cadd.hg19_cadd_dropped"
+    input: 
+        os.path.join("results/indiv_avinput",
+                     "qc_wgs_phased_snp.sample.BM1452.001.avinput")
+    params: 
+        output_prefix = os.path.join("results/annovar_output/cadd_annotation",
+                                     "wgs_phased_snp.cadd")
+    output: 
+        os.path.join("results/annovar_output/cadd_annotation",
+                     "wgs_phased_snp.cadd.hg19_cadd_dropped")
     shell: """
         $HOME/programs/annovar/annovar2014Jul14/annotate_variation.pl \
         {input} \
@@ -1459,8 +1983,12 @@ rule annotate_novel_cadd:
 # Prepare vcf files for individual samples
 ################################################################################
 rule convert_to_annovar_indiv:
-    input: "results/annovar/input/qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
-    output: "results/annovar/input/qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.avinput"
+    input: 
+        os.path.join("results/annovar/input",
+                     "qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf")
+    output: 
+        os.path.join("results/annovar/input",
+                     "qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.avinput")
     message:"""
     Convert VCF file to avinput
     
@@ -1478,11 +2006,13 @@ rule convert_to_annovar_indiv:
 
 rule qc_genotype_indiv:
     input: 
-        "results/annovar/input/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
+        os.path.join("results/annovar/input",
+                     "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf")
     params: 
         sample = "{SAMPLEID}"
     output: 
-        "results/annovar/input/qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
+        os.path.join("results/annovar/input",
+                     "qc_wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf")
     message:"""
     Perform quality control on individual genotypes, checking for:
     
@@ -1517,8 +2047,11 @@ rule split_vcf_file:
     input: "data/wgs_phased_{VAR_TYPE}.vcf"
     params: 
         subject = "{SAMPLEID}",
-        output_prefix = "results/annovar/input/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}"
-    output: "results/annovar/input/wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf"
+        output_prefix = os.path.join("results/annovar/input",
+                                     "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}")
+    output: 
+        os.path.join("results/annovar/input",
+                     "wgs_phased_{VAR_TYPE}.sample.{SAMPLEID}.recode.vcf")
     message:"""
     Split multi-sample VCF file into individual VCF files: 
     
@@ -1541,8 +2074,8 @@ rule split_vcf_file:
 rule test_all_sample_annotation:
     input:
         expand(
-            os.path.join("results/annovar/output/counts",
-                         "wgs_phased_{VAR_TYPE}.all_sample.pop_counts.txt"), 
+            os.path.join("results/annovar/output/counts/",
+                     "wgs_phased_{VAR_TYPE}.all_sample.pop_counts.txt"), 
             VAR_TYPE = var_type
         )
 
@@ -1551,19 +2084,20 @@ rule all_sample_population_counts:
         os.path.join("results/annovar/output/multiannotation/all_samples",
                      "wgs_phased_{VAR_TYPE}.hg19_multianno.txt")
     output: 
-        os.path.join("results/annovar/output/counts",
+        os.path.join("results/annovar/output/counts/",
                      "wgs_phased_{VAR_TYPE}.all_sample.pop_counts.txt")
     message:"""
-Summarize counts of the different annotations.
+    Summarize counts of the different annotations.
 
-Get the counts of variants that were previously reported:
-    
-    * All variants
-    * Found in dbSNP138
-    * Found in 1kg 
-    * Found in ESP6500
-    * In any DB
-    * Novel variants
+    Get the counts of variants that were previously reported:
+        
+        * All variants
+        * Found in dbSNP138
+        * Found in generic dbsnp138
+        * Found in 1kg 
+        * Found in ESP6500
+        * In any DB
+        * Novel variants
     
     Input: {input}
     Output: {output}
@@ -1571,27 +2105,196 @@ Get the counts of variants that were previously reported:
     run:
         count_population_database(input[0], output[0])
 
+rule all_sample_summarize_variant_function:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "exonic.deleterious.txt")
+        )
+    output:
+        os.path.join(
+            "results/annovar/output/counts",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.var_function.txt")
+        )
+    run:
+        summarize_variant_function(input[0], output[0])
+
+rule all_sample_summarize_exonic_function:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "exonic.deleterious.txt")
+        )
+    output:
+        os.path.join(
+            "results/annovar/output/counts",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}."
+             "nosuperdup.exonic.deleterious.exonic_function.txt")
+        )
+    run:
+        summarize_exonic_functions(input[0], output[0])
+
+rule all_sample_summarize_filtering_steps:
+    input:
+        multianno_file = os.path.join(
+            "results/annovar/output/multiannotation/all_samples/",
+            "wgs_phased_{VAR_TYPE}.hg19_multianno.txt"
+        ),
+        var_filter_file = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.txt"
+        ),
+        superdup_file = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/",
+            "{FREQ}/wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup.txt"
+        ),
+        noncoding_file = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "noncoding.txt")
+        ),
+        exonic_file = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup.exonic.txt"
+        ),
+        nonsynonymous_file = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "exonic.nonsyn.txt")
+        ),
+        deleterious_file = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "exonic.deleterious.txt")
+        )
+    params:
+        var_filter_type = "Allele frequency: {FREQ}"
+    output:
+        os.path.join(
+            "results/annovar/output/counts",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}."
+             "filtering_summary.txt")
+        )
+    run:
+        summarize_filtering_results(
+            multianno_file = input.multianno_file,
+            var_filter_file = input.var_filter_file,
+            superdup_file = input.superdup_file,
+            noncoding_file = input.noncoding_file,
+            exonic_file = input.exonic_file,
+            nonsynonymous_file = input.nonsynonymous_file,
+            deleterious_file = input.deleterious_file,
+            output = output[0],
+            var_filter_type = params.var_filter_type
+        )
+
+rule all_sample_extract_deleterious:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.freq.{FREQ}.nosuperdup."
+             "exonic.nonsyn.txt")
+        )
+    params:
+        deleterious_count_cutoff = "2"
+    output:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.freq.{FREQ}.nosuperdup."
+             "exonic.deleterious.txt")
+        )
+    run:
+        extract_deleterious_variants(input[0], output[0], 
+                                     params.deleterious_count_cutoff)
+
+rule all_sample_extract_nonsynonymous:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "exonic.txt")
+        )
+    output:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "exonic.nonsyn.txt")
+        )
+    run:
+        extract_nonsynonymous_variants(input[0], output[0])
+
+rule all_sample_parse_coding_noncoding:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup.txt"
+        )
+    output:
+        exonic = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup.exonic.txt"
+        ),
+        noncoding = os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            ("wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup."
+             "noncoding.txt")
+        )
+    run:
+        parse_coding_vs_noncoding(input[0], output.exonic, output.noncoding)
+
+rule all_sample_remove_superdup:
+    input:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.txt")
+    output:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.nosuperdup.txt")
+    run:
+        remove_superdup(input[0], output[0])
+
+rule all_sample_filter_on_variant_frequency:
+    input:
+        os.path.join(
+            "results/annovar/output/multiannotation/all_samples/",
+            "wgs_phased_{VAR_TYPE}.hg19_multianno.txt")
+    params:
+        frequency = "{FREQ}"
+    output:
+        os.path.join(
+            "results/annovar/output/variant_filtering/all_samples/{FREQ}",
+            "wgs_phased_{VAR_TYPE}.all_sample.freq.{FREQ}.txt")
+    run:
+        if params.frequency == "all":
+            shell("cp {input} {output}")
+        elif params.frequency == "novel":
+            extract_novel_variants(input[0], output[0])
+        else:
+            maf = float(params.frequency[4:])
+            extract_rare_variants(input[0], output[0], maf)
+
 rule table_annotation_all_samples:
     input: 
-        "results/annovar/input/allsample/wgs_phased_{VAR_TYPE}.avinput"
+        "results/annovar/input/allsample/wgs_phased_{VAR_TYPE}.avinput",
+        "/cork/jchung/annovar/humandb/hg19_custom_dbsnp138.txt"
     params: 
         output_prefix = os.path.join(
             "results/annovar/output/multiannotation/all_samples",
             "wgs_phased_{VAR_TYPE}"),
         protocol = ",".join(["refGene", "phastConsElements46way", 
                              "genomicSuperDups", "esp6500si_all", 
-                             "1000g2012apr_all", "snp138", "ljb23_all"]),
-        operation = "g,r,r,f,f,f,f",
-        build = "hg19"
+                             "1000g2012apr_all", "snp138", "generic",
+                             "ljb23_all"]),
+        operation = "g,r,r,f,f,f,f,f",
+        build = "hg19",
+        custom_db = "hg19_custom_dbsnp138.txt"
     output:
         os.path.join("results/annovar/output/multiannotation/all_samples/",
-                     "wgs_phased_{VAR_TYPE}.hg19_multianno.txt"),
-        os.path.join("results/annovar/output/multiannotation/all_samples/",
-                     "wgs_phased_{VAR_TYPE}.hg19_snp138_dropped"),
-        os.path.join("results/annovar/output/multiannotation/all_samples/",
-                     "wgs_phased_{VAR_TYPE}.hg19_ALL.sites.2012_04_dropped"),
-        os.path.join("results/annovar/output/multiannotation/all_samples/",
-                     "wgs_phased_{VAR_TYPE}.hg19_esp6500si_all_dropped")
+                     "wgs_phased_{VAR_TYPE}.hg19_multianno.txt")
     message: """
     Perform table annotation using annovar.
     
@@ -1610,11 +2313,12 @@ rule table_annotation_all_samples:
     """
     shell: """
     {annovar_dir}/table_annovar.pl \
-    {input} \
+    {input[0]} \
     {annovar_dir}/humandb/ \
     --protocol {params.protocol} \
     --operation {params.operation} \
     --buildver {params.build} \
+    --genericdbfile {params.custom_db} \
     --outfile {params.output_prefix} \
     --otherinfo
     """
@@ -1693,3 +2397,30 @@ rule filter_vcf_file:
                     out_file.write(line)
         in_file.close()
         out_file.close()
+
+########################################################################
+# Create custom snp1141 generic db.
+# This is because there are some problems with the allele information
+# found in the provided hg19_snp138.txt ANNOVAR database.
+# Particularly: rs373880503 and rs376103961
+########################################################################
+rule dbsnp_avinput_to_genericdb:
+    input: "/cork/jchung/annovar/dbsnp138/dbsnp138.avinput"
+    output: "/cork/jchung/annovar/humandb/hg19_custom_dbsnp138.txt"
+    shell: """
+        awk -v OFS=$"\t" '{{print $1, $2, $3, $4, $5, $8}}' \
+        {input} > {output}
+    """
+
+rule dbsnp_vcf_to_avinput:
+    input: "/cork/jchung/annovar/dbsnp138/All.vcf"
+    output: "/cork/jchung/annovar/dbsnp138/dbsnp138.avinput"
+    shell: """
+        {annovar_dir}/convert2annovar.pl \
+        --format vcf4 {input} \
+        --outfile {output} \
+        --includeinfo \
+    """
+        
+        
+        

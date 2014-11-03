@@ -1,12 +1,12 @@
 # Analysis of whole genome sequencing data using VAAST
 
 workdir: "/home/jchung/projects/wgs/"
-vaast_sort_gff = "/home/jchung/programs/VAAST_Code_2.0.1/bin/vaast_tools/vaast_sort_gff"
-vaast_converter = "/home/jchung/programs/VAAST_Code_2.0.1/bin/vaast_tools/vaast_converter"
+vaast_sort_gff = "/home/jchung/programs/VAAST_Code_2.1.4/bin/vaast_tools/vaast_sort_gff"
+vaast_converter = "/home/jchung/programs/VAAST_Code_2.1.4/bin/vaast_tools/vaast_converter"
 
-refseqFeatures  = "/home/jchung/programs/VAAST_Code_2.0.1/data/hg19/Features/refGene_hg19.gff3"
-refseqFeaturesSort = "/home/jchung/programs/VAAST_Code_2.0.1/data/hg19/Features/refGene_hg19.sorted.gff3"
-hg19Fasta = "/home/jchung/programs/VAAST_Code_2.0.1/data/hg19/Fasta/vaast_hsap_chrs_hg19.fa"
+refseqFeatures  = "/home/jchung/programs/VAAST_Code_2.1.4/data/hg19/Features/refGene_hg19.gff3"
+refseqFeaturesSort = "/home/jchung/programs/VAAST_Code_2.1.4/data/hg19/Features/refGene_hg19.sorted.gff3"
+hg19Fasta = "/home/jchung/programs/VAAST_Code_2.1.4/data/hg19/Fasta/vaast_hsap_chrs_hg19.fa"
 
 wesFamFile = "/home/jchung/projects/WES/data/skat_test/wes186_skat_TOF4.fam"
 wesIdForWgsSampleFile = "/home/jchung/projects/wgs/data/wesIdForWgsSamples.txt"

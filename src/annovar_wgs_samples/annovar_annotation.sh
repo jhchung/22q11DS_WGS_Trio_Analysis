@@ -4,7 +4,7 @@
 #$ -N wgs_annovar
 #$ -j y
 #$ -o projects/wgs/qsub_out/$JOB_NAME.o$JOB_ID
-#$ -l mem_free=30G
+#$ -l mem_free=40G
 #$ -pe mpi 4
 #$ -m ae
 #$ -M jonathan.chung@phd.einstein.yu.edu
