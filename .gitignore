@@ -1,4 +1,5 @@
 # Directories to ignore
+**/old_scripts/
 results_old/
 results/
 data/
