@@ -5,7 +5,6 @@
 #$ -j y
 #$ -o projects/wgs/qsub_out/$JOB_NAME.o$JOB_ID
 #$ -l mem_free=40G
-#$ -pe mpi 4
 #$ -m ae
 #$ -M jonathan.chung@phd.einstein.yu.edu
 
@@ -16,4 +15,6 @@ echo "Current job ID     : $JOB_ID"
 echo "Current job name   : $JOB_NAME"
 echo "==============================="
 
-snakemake -s ~/projects/wgs/src/annovar_wgs_samples/annovar_annotation.snakefile checkpoint1 -j 4 --rerun-incomplete
+snakemake -s ~/projects/wgs/src/annovar_wgs_samples/annovar_annotation.snakefile \
+    checkpoint1 \
+    --forceall

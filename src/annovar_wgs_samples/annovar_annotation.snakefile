@@ -823,7 +823,22 @@ rule all:
         "results/novel_variants/novel_deleterious.snv.txt",
         "results/novel_variants/novel_deleterious.indel.txt",
         "results/rare_variants/rare_genic_deleterious.snv.txt",
-        "results/rare_variants/rare_genic_deleterious.indel.txt"
+        "results/rare_variants/rare_genic_deleterious.indel.txt",
+        expand(os.path.join("results/annovar/output/refgene/all_samples/",
+                     "wgs_phased_{VAR_TYPE}.refgene_hgvs.variant_function"),
+              VAR_TYPE = var_type),
+        expand(os.path.join("results/annovar/output/refgene/all_samples/",
+                     "wgs_phased_{VAR_TYPE}.refgene_hgvs.exonic_variant_function"),
+              VAR_TYPE = var_type)
+
+rule check_hgvs_annotation:
+    input:
+        expand(os.path.join("results/annovar/output/refgene/all_samples/",
+                     "wgs_phased_{VAR_TYPE}.refgene_hgvs.variant_function"),
+              VAR_TYPE = var_type),
+        expand(os.path.join("results/annovar/output/refgene/all_samples/",
+                     "wgs_phased_{VAR_TYPE}.refgene_hgvs.exonic_variant_function"),
+              VAR_TYPE = var_type)
 
 rule split_indel_snv_novel:
     input:
@@ -1931,6 +1946,7 @@ rule table_annotation_indiv:
     --protocol {params.protocol} \
     --operation {params.operation} \
     --buildver {params.build} \
+    --hgvs \
     --genericdbfile {params.custom_db} \
     --outfile {params.output_prefix} \
     --otherinfo
@@ -1939,45 +1955,49 @@ rule table_annotation_indiv:
 ################################################################################
 # All sample CADD table annotations
 ################################################################################
-rule filter_cadd:
-    input: os.path.join("results/annovar_output/cadd_annotation",
-                        "wgs_phased_snp.cadd.hg19_cadd_dropped")
-    params: scaled_cadd_cutoff = "20"
-    output: os.path.join("results/annovar_output/cadd_annotation",
-                         "wgs_phased_snp.cadd.hg19_cadd_dropped.filtered")
-    run:
-        in_file = open(input[0], "r")
-        out_file = open(output[0], "w")
+# rule filter_cadd:
+    # input:
+        # os.path.join("results/annovar_output/cadd_annotation",
+                     # "wgs_phased_snp.cadd.hg19_cadd_dropped")
+    # params: 
+        # scaled_cadd_cutoff = "20"
+    # output: 
+        # os.path.join("results/annovar_output/cadd_annotation",
+                     # "wgs_phased_snp.cadd.hg19_cadd_dropped.filtered")
+    # run:
+        # in_file = open(input[0], "r")
+        # out_file = open(output[0], "w")
 
-        for line in in_file:
-            split_line = line.split("\t")
-            cadd_score = split_line[1].split(",")
-            scaled_cadd = cadd_score[1]
-            if float(scaled_cadd) >= int(params.scaled_cadd_cutoff):
-                out_file.write(line)
-        in_file.close()
-        out_file.close()
+        # for line in in_file:
+            # split_line = line.split("\t")
+            # cadd_score = split_line[1].split(",")
+            # scaled_cadd = cadd_score[1]
+            # if float(scaled_cadd) >= int(params.scaled_cadd_cutoff):
+                # out_file.write(line)
+        # in_file.close()
+        # out_file.close()
 
-rule annotate_novel_cadd:
-    input: 
-        os.path.join("results/indiv_avinput",
-                     "qc_wgs_phased_snp.sample.BM1452.001.avinput")
-    params: 
-        output_prefix = os.path.join("results/annovar_output/cadd_annotation",
-                                     "wgs_phased_snp.cadd")
-    output: 
-        os.path.join("results/annovar_output/cadd_annotation",
-                     "wgs_phased_snp.cadd.hg19_cadd_dropped")
-    shell: """
-        $HOME/programs/annovar/annovar2014Jul14/annotate_variation.pl \
-        {input} \
-        $HOME/programs/annovar/annovar2014Jul14/humandb/ \
-        -filter \
-        -dbtype cadd \
-        -buildver hg19 \
-        -out {params.output_prefix} \
-        -otherinfo
-    """
+# rule annotate_novel_cadd:
+    # input: 
+        # os.path.join("results/indiv_avinput",
+                     # "qc_wgs_phased_snp.sample.BM1452.001.avinput")
+    # params: 
+        # output_prefix = os.path.join("results/annovar_output/cadd_annotation",
+                                     # "wgs_phased_snp.cadd")
+    # output: 
+        # os.path.join("results/annovar_output/cadd_annotation",
+                     # "wgs_phased_snp.cadd.hg19_cadd_dropped")
+    # shell: """
+        # $HOME/programs/annovar/annovar2014Jul14/annotate_variation.pl \
+        # {input} \
+        # $HOME/programs/annovar/annovar2014Jul14/humandb/ \
+        # -filter \
+        # -dbtype cadd \
+        # -buildver hg19 \
+        # -hgvs \
+        # -out {params.output_prefix} \
+        # -otherinfo
+    # """
 
 ################################################################################
 # Prepare vcf files for individual samples
@@ -2323,6 +2343,40 @@ rule table_annotation_all_samples:
     --otherinfo
     """
 
+rule refgene_annotation_all_samples:
+    input: 
+        "results/annovar/input/allsample/wgs_phased_{VAR_TYPE}.avinput"
+    params: 
+        output_prefix = os.path.join(
+            "results/annovar/output/refgene/all_samples",
+            "wgs_phased_{VAR_TYPE}.refgene_hgvs"),
+        build = "hg19"
+    output:
+        os.path.join("results/annovar/output/refgene/all_samples/",
+                     "wgs_phased_{VAR_TYPE}.refgene_hgvs.variant_function"),
+        os.path.join("results/annovar/output/refgene/all_samples/",
+                     "wgs_phased_{VAR_TYPE}.refgene_hgvs.exonic_variant_function")
+    message: """
+    Perform gene-based annotation using annovar and output in HGVS format.
+    
+    Annotate variants using:
+        
+        * refGene
+
+    Input: {input}
+    Output: {output}
+    """
+    shell: """
+    {annovar_dir}/annotate_variation.pl \
+    --geneanno \
+    --outfile {params.output_prefix} \
+    --buildver {params.build} \
+    --hgvs \
+    --otherinfo \
+    {input[0]} \
+    {annovar_dir}/humandb/ \
+    """
+
 rule convert_allsample_to_avinput:
     input: "results/annovar/input/allsample/wgs_phased_{VAR_TYPE}_filtered.vcf"
     output: "results/annovar/input/allsample/wgs_phased_{VAR_TYPE}.avinput"
@@ -2399,7 +2453,7 @@ rule filter_vcf_file:
         out_file.close()
 
 ########################################################################
-# Create custom snp1141 generic db.
+# Create custom sn138 generic db.
 # This is because there are some problems with the allele information
 # found in the provided hg19_snp138.txt ANNOVAR database.
 # Particularly: rs373880503 and rs376103961

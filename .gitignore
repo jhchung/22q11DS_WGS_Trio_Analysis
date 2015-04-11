@@ -1,4 +1,5 @@
 # Directories to ignore
+results_old/
 results/
 data/
 qsub_out/
